@@ -1,10 +1,5 @@
 TODO list for Perl module WWW::Patent::Page
 
-- More tests
-- More functionality; make use of the two letter country codes
-- More offices
-- read enthusiastic emails from users and bug-reporters
-- release early and often, in response to bug-reporters
-- cache and reuse the URL that most directly retrieves the page, rather than rebuilding it each time.
+- Better error reporting; extend the analogy with HTTP::Response
 
 

@@ -4,129 +4,146 @@ use strict;
 use warnings;
 use diagnostics;
 use Carp;
-use subs qw( methods USPTO_countries_available USPTO_parse_doc_id USPTO_htm USPTO_tif USPTO_terms  );
+use subs
+	qw( methods USPTO_country_known  USPTO_htm USPTO_tif USPTO_terms  );
 use LWP::UserAgent 2.003;
 require HTTP::Request;
 use HTML::HeadParser;
 use HTML::TokeParser;
-
-
 
 use vars qw/ $VERSION @ISA/;
 
 $VERSION = "0.1";
 
 sub methods {
-	return ('USPTO_htm'	=> \&USPTO_htm ,
-		'USPTO_tif'	=> \&USPTO_tif ,
-		'USPTO_countries_available' => \&USPTO_countries_available ,
-		'USPTO_parse_doc_id' => \&USPTO_parse_doc_id ,
-		'USPTO_terms'	=> \&USPTO_terms ,
-	);	
+	return (
+		'USPTO_htm'                 => \&USPTO_htm,
+		'USPTO_tif'                 => \&USPTO_tif,
+		'USPTO_country_known' => \&USPTO_country_known,
+#		'USPTO_parse_doc_id'        => \&USPTO_parse_doc_id,
+		'USPTO_terms'               => \&USPTO_terms,
+	);
 
 }
 
-sub USPTO_countries_available{ 
+sub USPTO_country_known {
 	my $self = shift @_;
-	return  ('US' => '1790 on' , ) 
-} 
-
-sub USPTO_parse_doc_id{ 
-#	Utility: 5,146,634
-#	Design: D339,456
-#	Plant: PP8,901
-#	Reissue: RE35,312
-#	Def. Pub.: T109,201
-#	SIR: H1,523
-	my $self = shift @_;
-	my $id = $self->{'patent'}->{'doc_id'} || carp "No document id to parse" ;
-	$id =~ s/^US//i; # strip leading US- only choice at USPTO!
-	if ($id =~ s/^(D|PP|RE|T|H)//i) { $self->{'patent'}->{'type'} = uc($1); } else { $self->{'patent'}->{'type'} = '' }
-	if ($id =~ s/^([,\-\d_]+)//i) {  #required document identifier number 
-		$self->{'patent'}->{'number'} = $1; # warn "NUMBER is $self->{'patent'}->{'number'} \n";
-		$self->{'patent'}->{'number'} =~ s/[,\-_]//g ; # warn "NUMBER is $self->{'patent'}->{'number'} \n";
-		# kludge to put commas into T publications...
-		if (exists($self->{'patent'}->{'type'}) && $self->{'patent'}->{'type'} eq 'T') {
-			my $text = reverse $self->{'patent'}->{'number'};
-			$text =~ s/(\d\d\d)(?=\d)(?!\d*\.)/$1,/g;
-			$self->{'patent'}->{'number'} = scalar reverse $text;
-		}
-			
-	} 
-	else {carp "no documunt number in '$id'"}
-	if ($id =~ s/^\((\w+)\)//i) {  #optional version number
-		$self->{'patent'}->{'version'} = $1;
-	} 
-	if ($id) {$self->{'patent'}->{'comment'} = $$id;}
-	return $self; 		  		
+	my $country = shift;
+	if ('US' eq uc($country)) {return ('1790 on');} else {carp 'US only!';return undef}
 }
 
 sub USPTO_htm {
 	my ($self) = @_;
-	my $request; my $request_text;
-	if ( (!$self->{'patent'}->{'type'}) && (length($self->{'patent'}{'number'}) == 11) ) {
+	my $page_response =
+		WWW::Patent::Page::Response->new( %{ $self->{'patent'} } );
+	my $request;
+	my $request_text;
+	if (   ( !$self->{'patent'}->{'type'} )
+		&& ( length( $self->{'patent'}{'number'} ) == 11 ) )
+	{
+
 		# Application  (11 digits)
-		$request_text = 'http://appft1.uspto.gov/netacgi/nph-Parser?TERM1='.$self->{'patent'}{'number'}.'&Sect1=PTO1&Sect2=HITOFF&d=PG01&p=1&u=%2Fnetahtml%2FPTO%2Fsrchnum.html&r=0&f=S&l=50';
-		$request = HTTP::Request->new('GET' => $request_text );
+		$request_text =
+			  'http://appft1.uspto.gov/netacgi/nph-Parser?TERM1='
+			. $self->{'patent'}{'number'}
+			. '&Sect1=PTO1&Sect2=HITOFF&d=PG01&p=1&u=%2Fnetahtml%2FPTO%2Fsrchnum.html&r=0&f=S&l=50';
+		$request = HTTP::Request->new( 'GET' => $request_text );
 		my $intermediate = $self->request($request);
-		my $p = HTML::TokeParser->new(\$intermediate->content);
-		while (my $token = $p->get_tag("a")) {
-			my $url = $token->[1]{href} || "-";
+		my $p            = HTML::TokeParser->new( \$intermediate->content );
+		while ( my $token = $p->get_tag("a") ) {
+			my $url  = $token->[1]{href} || "-";
 			my $text = $p->get_trimmed_text("/a");
-			if ( ($url =~ m/$self->{'patent'}{'number'}/)  && ($text =~  m/$self->{'patent'}{'number'}/)) {
+			if (   ( $url =~ m/$self->{'patent'}{'number'}/ )
+				&& ( $text =~ m/$self->{'patent'}{'number'}/ ) )
+			{
+
 				#warn "fully qualified? '$url'\n";
-				$request_text = 'http://appft1.uspto.gov/'.$url ;
-				$request = HTTP::Request->new('GET' =>  $request_text );
+				$request_text = 'http://appft1.uspto.gov/' . $url;
+				$request = HTTP::Request->new( 'GET' => $request_text );
 			}
 		}
 	}
+
 #http://appft1.uspto.gov/netacgi/nph-Parser?Sect1=PTO1&Sect2=HITOFF&d=PG01&p=1&u=%2Fnetahtml%2FPTO%2Fsrchnum.html&r=1&f=G&l=50&s1=%2220010000044%22.PGNR.&OS=DN/20010000044&RS=DN/20010000044
-	elsif ($self->{'patent'}->{'type'}) {
+	elsif ( $self->{'patent'}->{'type'} ) {
+
 		# Non-Utility Patent
-		$request_text =  "http://patft.uspto.gov/netacgi/nph-Parser?patentnumber=$self->{'patent'}->{'type'}$self->{'patent'}{'number'}";
-		$request = HTTP::Request->new('GET' => $request_text );
+		$request_text =
+			"http://patft.uspto.gov/netacgi/nph-Parser?patentnumber=$self->{'patent'}->{'type'}$self->{'patent'}{'number'}";
+		$request = HTTP::Request->new( 'GET' => $request_text );
 	}
-	else {
-		#Standard Utility Patent
-		$request_text = "http://patft.uspto.gov/netacgi/nph-Parser?patentnumber=$self->{'patent'}{'number'}";
-		$request = HTTP::Request->new('GET' => $request_text );
-	}	
+	else {    
+		      #Standard Utility Patent
+		$request_text =
+			"http://patft.uspto.gov/netacgi/nph-Parser?patentnumber=$self->{'patent'}{'number'}";
+		$request = HTTP::Request->new( 'GET' => $request_text );
+	}
+
 	# print "\nAlmost $self->{'retrieved_identifier'}->{'number'} \n";
-	my $response = $self->request($request); # use the agent to make the request and get the response
-	# print "\there\n";
-	if ($response->is_success) {
-	my $html = $response->content ;
-	# print "\n$html\n";
-	my $p = HTML::HeadParser->new; 
-	$p->parse($response->content);
-	my $entry;
-	if (  $entry = $p->header('Refresh') ) { # carp "no refresh seen via '$self->{'patent'}{'number'}' in \n'$html' " }
-		$entry =~ s/^.*?URL=//;
-		$entry = 'http://patft.uspto.gov'.$entry;
-		# print "$entry\n";
-		$request = new HTTP::Request('GET' => "$entry") or carp "bad refresh";
-		$response = $self->request($request);
-		$html = $response->content ;
-	}
-	unless ($html =~ s/.*?<html>.*?<head>/<html>\n<head><!-- Modified by perl module WWW::Patent::Page from information provided by http:\/\/www.uspto.gov ; dedicated to public ; use at own risk -->\n<title>US /is) {carp "header weird A \n"} 
-	unless ($html =~ s/<head>.*(<title>)\D+/<head><!-- Modified by perl module WWW::Patent::Page from information provided by http:\/\/www.uspto.gov ; dedicated to public ; use at own risk -->\n<title>US /is) {carp "header weird B \n"} 
-	unless ($html =~ s/<title>\D+/<title>US /is) {carp "header weird C \n$html\n"} 
-	#warn " type is $self->{'patent'}->{'type'}'\n";
-	unless ($html =~ s/<body.*?<hr>/<body><HR>/is) {carp "front weird  \n$html\n"} 
-	unless ($html =~ s/(.*)<hr>(.*)body>/$1<\/body>/is) {carp "end weird  \n$html\n"} 
-	$html =~ s|"/netacgi/nph-Parser|"http://patft.uspto.gov/netacgi/nph-Parser|gi;
-	$self->{'patent'}->{'as_string'} = $html ;
-	return $self;
+	my $response =
+		$self->request($request)
+		;     # use the agent to make the request and get the response
+	          # print "\there\n";
+	if ( $response->is_success ) {
+		my $html = $response->content;
+
+		# print "\n$html\n";
+		my $p = HTML::HeadParser->new;
+		$p->parse( $response->content );
+		my $entry;
+		if ( $entry = $p->header('Refresh') )
+		{ # carp "no refresh seen via '$self->{'patent'}{'number'}' in \n'$html' " }
+			$entry =~ s/^.*?URL=//;
+			$entry = 'http://patft.uspto.gov' . $entry;
+
+			# print "$entry\n";
+			$request = new HTTP::Request( 'GET' => "$entry" )
+				or carp "bad refresh";
+			$response = $self->request($request);
+			$html     = $response->content;
+		}
+		unless ( $html =~
+			s/.*?<html>.*?<head>/<html>\n<head><!-- Modified by perl module WWW::Patent::Page from information provided by http:\/\/www.uspto.gov ; dedicated to public ; use at own risk -->\n<title>US /is
+			)
+		{
+			carp "header weird A \n";
+		}
+		unless ( $html =~
+			s/<head>.*(<title>)\D+/<head><!-- Modified by perl module WWW::Patent::Page from information provided by http:\/\/www.uspto.gov ; dedicated to public ; use at own risk -->\n<title>US /is
+			)
+		{
+			carp "header weird B \n";
+		}
+		unless ( $html =~ s/<title>\D+/<title>US /is ) {
+			carp "header weird C \n$html\n";
+		}
+
+		#warn " type is $self->{'patent'}->{'type'}'\n";
+		unless ( $html =~ s/<body.*?<hr>/<body><HR>/is ) {
+			carp "front weird  \n$html\n";
+		}
+		unless ( $html =~ s/(.*)<hr>(.*)body>/$1<\/body>/is ) {
+			carp "end weird  \n$html\n";
+		}
+		$html =~
+			s|"/netacgi/nph-Parser|"http://patft.uspto.gov/netacgi/nph-Parser|gi;
+		$page_response->set_parameter( 'content', $html );
+		return $page_response;
 	}
 	else {
-		carp "Unsucessful response: \n'".$response->status_line."'\n\nfrom request:\n'$request_text'\n";
-		return $self;
+		carp "Unsuccessful response: \n'"
+			. $response->status_line
+			. "'\n\nfrom request:\n'$request_text'\n";
+		return undef;
 	}
 }
 
-sub USPTO_tif{
+sub USPTO_tif {
 	my ($self) = @_;
-	my ($request,$base,$zero_fill);
+	my $page_response =
+		WWW::Patent::Page::Response->new( %{ $self->{'patent'} } );
+	my ( $request, $base, $zero_fill );
+
 #  Direct access to the full-page image database is now
 #  permitted without first conducting a search on the full-text database. Such
 #  access is now possible by using a URL of the form:
@@ -145,69 +162,86 @@ sub USPTO_tif{
 # $request = new HTTP::Request('GET' => "http://patimg1.uspto.gov/.DImg?Docid=US0PP008901&PageNum=2&IDKey=8C4FEBE740CB&ImgFormat=tif");
 
 # Referer: http://patft.uspto.gov/netahtml/srchnum.htm
-# Request: http://patft.uspto.gov/netacgi/nph-Parser?TERM1=PP8%2C901&Sect1=PTO1&Sect2=HITOFF&d=PALL&p=1&u=%2Fnetahtml%2Fsrchnum.htm&r=0&f=S&l=50 
-# Request: http://patft.uspto.gov/netacgi/nph-Parser?Sect1=PTO1&Sect2=HITOFF&d=PALL&p=1&u=/netahtml/srchnum.htm&r=1&f=G&l=50&s1=PP8,901.WKU.&OS=PN/PP8,901&RS=PN/PP8,901 
-# Request: http://patimg1.uspto.gov/.piw?Docid=PP008901&homeurl=http%3A%2F%2Fpatft.uspto.gov%2Fnetacgi%2Fnph-Parser%3FSect1%3DPTO1%2526Sect2%3DHITOFF%2526d%3DPALL%2526p%3D1%2526u%3D%2Fnetahtml%2Fsrchnum.htm%2526r%3D1%2526f%3DG%2526l%3D50%2526s1%3DPP8,901.WKU.%2526OS%3DPN%2FPP8,901%2526RS%3DPN%2FPP8,901&PageNum=&Rtype=&SectionNum=&idkey=8C4FEBE740CB 
-# Request: http://patimg1.uspto.gov/.DImg?Docid=US0PP008901&PageNum=1&IDKey=8C4FEBE740CB&ImgFormat=tif 
+# Request: http://patft.uspto.gov/netacgi/nph-Parser?TERM1=PP8%2C901&Sect1=PTO1&Sect2=HITOFF&d=PALL&p=1&u=%2Fnetahtml%2Fsrchnum.htm&r=0&f=S&l=50
+# Request: http://patft.uspto.gov/netacgi/nph-Parser?Sect1=PTO1&Sect2=HITOFF&d=PALL&p=1&u=/netahtml/srchnum.htm&r=1&f=G&l=50&s1=PP8,901.WKU.&OS=PN/PP8,901&RS=PN/PP8,901
+# Request: http://patimg1.uspto.gov/.piw?Docid=PP008901&homeurl=http%3A%2F%2Fpatft.uspto.gov%2Fnetacgi%2Fnph-Parser%3FSect1%3DPTO1%2526Sect2%3DHITOFF%2526d%3DPALL%2526p%3D1%2526u%3D%2Fnetahtml%2Fsrchnum.htm%2526r%3D1%2526f%3DG%2526l%3D50%2526s1%3DPP8,901.WKU.%2526OS%3DPN%2FPP8,901%2526RS%3DPN%2FPP8,901&PageNum=&Rtype=&SectionNum=&idkey=8C4FEBE740CB
+# Request: http://patimg1.uspto.gov/.DImg?Docid=US0PP008901&PageNum=1&IDKey=8C4FEBE740CB&ImgFormat=tif
 # page 2
-# Request: http://patimg1.uspto.gov/.piw?docid=US0PP008901&PageNum=2&IDKey=8C4FEBE740CB&HomeUrl=http://patft.uspto.gov/netacgi/nph-Parser?Sect1=PTO1%2526Sect2=HITOFF%2526d=PALL%2526p=1%2526u=/netahtml/srchnum.htm%2526r=1%2526f=G%2526l=50%2526s1=PP8,901.WKU.%2526OS=PN/PP8,901%2526RS=PN/PP8,901 
-# Request: http://patimg1.uspto.gov/.DImg?Docid=US0PP008901&PageNum=2&IDKey=8C4FEBE740CB&ImgFormat=tif 
+# Request: http://patimg1.uspto.gov/.piw?docid=US0PP008901&PageNum=2&IDKey=8C4FEBE740CB&HomeUrl=http://patft.uspto.gov/netacgi/nph-Parser?Sect1=PTO1%2526Sect2=HITOFF%2526d=PALL%2526p=1%2526u=/netahtml/srchnum.htm%2526r=1%2526f=G%2526l=50%2526s1=PP8,901.WKU.%2526OS=PN/PP8,901%2526RS=PN/PP8,901
+# Request: http://patimg1.uspto.gov/.DImg?Docid=US0PP008901&PageNum=2&IDKey=8C4FEBE740CB&ImgFormat=tif
 # page 3
-# Request: http://patimg1.uspto.gov/.piw?docid=US0PP008901&PageNum=3&IDKey=8C4FEBE740CB&HomeUrl=http://patft.uspto.gov/netacgi/nph-Parser?Sect1=PTO1%2526Sect2=HITOFF%2526d=PALL%2526p=1%2526u=/netahtml/srchnum.htm%2526r=1%2526f=G%2526l=50%2526s1=PP8,901.WKU.%2526OS=PN/PP8,901%2526RS=PN/PP8,901 
-# Request: http://patimg1.uspto.gov/.DImg?Docid=US0PP008901&PageNum=3&IDKey=8C4FEBE740CB&ImgFormat=tif 
+# Request: http://patimg1.uspto.gov/.piw?docid=US0PP008901&PageNum=3&IDKey=8C4FEBE740CB&HomeUrl=http://patft.uspto.gov/netacgi/nph-Parser?Sect1=PTO1%2526Sect2=HITOFF%2526d=PALL%2526p=1%2526u=/netahtml/srchnum.htm%2526r=1%2526f=G%2526l=50%2526s1=PP8,901.WKU.%2526OS=PN/PP8,901%2526RS=PN/PP8,901
+# Request: http://patimg1.uspto.gov/.DImg?Docid=US0PP008901&PageNum=3&IDKey=8C4FEBE740CB&ImgFormat=tif
 
+	if ( $self->{'patent'}{'number'} =~ m/(0|1|2|3|4)\d$/ ) {
 
-	if ($self->{'patent'}{'number'} =~ m/(0|1|2|3|4)\d$/) {
 		# 0-4 is on one server, 5-9 is on another
 		$base = 'patimg1.uspto.gov';
 	}
-	else {$base = 'patimg2.uspto.gov';}
-	my $zerofill = sprintf '%0.8u',$self->{'patent'}{'number'};
-	if ($self->{'patent'}->{'type'}) {
-		$request = HTTP::Request->new('GET' => "http://$base/.piw?Docid=$self->{'patent'}->{'type'}$zerofill\&idkey=NONE");
+	else { $base = 'patimg2.uspto.gov'; }
+	my $zerofill = sprintf '%0.8u', $self->{'patent'}{'number'};
+	if ( $self->{'patent'}->{'type'} ) {
+		$request =
+			HTTP::Request->new( 'GET' =>
+				"http://$base/.piw?Docid=$self->{'patent'}->{'type'}$zerofill\&idkey=NONE"
+			);
 	}
 	else {
-		$request = HTTP::Request->new('GET' => "http://$base/.piw?Docid=$zerofill\&idkey=NONE");
-	}	
+		$request =
+			HTTP::Request->new(
+			'GET' => "http://$base/.piw?Docid=$zerofill\&idkey=NONE" );
+	}
+
 	# print "\nAlmost $self->{'retrieved_identifier'}->{'number'} \n";
 	my $response = $self->request($request);
+
 	# print "\there\n";
-	my $html = $response->content ;
+	my $html = $response->content;
+
 	# print "\n$html\n";
-	
-	{ # page numbers
-#		if ($html =~ m/PageNum=(\d+)/) {
-#			$self->{'patent'}->{'page'} = $1;
-#		}
-		if ($html =~ m/NumPages=(\d+)/) {
-			$self->{'patent'}->{'pages_available'} = $1;
+
+	{    # page numbers
+
+		#		if ($html =~ m/PageNum=(\d+)/) {
+		#			$self->{'patent'}->{'page'} = $1;
+		#		}
+		if ( $html =~ m/NumPages=(\d+)/ ) {
+			$page_response->set_parameter('pages', $1);
 		}
-		elsif ($html =~ m/(\d+)\s+of\s+(\d+)\s+pages/) {
-			$self->{'patent'}->{'pages_available'} = $2;		
+		elsif ( $html =~ m/(\d+)\s+of\s+(\d+)\s+pages/ ) {
+			$page_response->set_parameter('pages', $2);
 		}
-		else {carp "no maximum page number found in $self->{'patent'}{'country'}$self->{'patent'}{'number'}: \n$html";}
+		else {
+			carp
+				"no maximum page number found in $self->{'patent'}{'country'}$self->{'patent'}{'number'}: \n$html";
+		}
 	}
 	my $p = HTML::TokeParser->new( \$html );
 	my $url;
-	FINDPAGE: while (my $token = $p->get_tag("a")) {
-             $url = $token->[1]{href} || "-";
-             if ($url =~ m/$self->{'patent'}{'number'}/ ) {last FINDPAGE;}
-             # print "$url\n";
-         }
-	 #warn "URL = '$url'\n";
-	 $url =~ s/PageNum=(\d+)/PageNum=$self->{'patent'}{'page'}/;
-	 $url ="http://$base$url";
-	 #warn "URL = '$url'\n";
-#	 exit;
-	$request = new HTTP::Request('GET' => "$url") or carp "bad numbered page $self->{'patent'}{'page'} fetch $url";
+FINDPAGE: while ( my $token = $p->get_tag("a") ) {
+		$url = $token->[1]{href} || "-";
+		if ( $url =~ m/$self->{'patent'}{'number'}/ ) { last FINDPAGE; }
+
+		# print "$url\n";
+	}
+
+	#warn "URL = '$url'\n";
+	$url =~ s/PageNum=(\d+)/PageNum=$self->{'patent'}{'page'}/;
+	$url = "http://$base$url";
+
+	#warn "URL = '$url'\n";
+	#	 exit;
+	$request = new HTTP::Request( 'GET' => "$url" )
+		or carp "bad numbered page $self->{'patent'}{'page'} fetch $url";
 	$response = $self->request($request);
-	$self->{'patent'}->{'as_string'} = $response->content ;
-	return $self;		
+	$page_response->set_parameter( 'content', $response->content );
+	return $page_response;
 }
 
-sub USPTO_terms{
+sub USPTO_terms {
 	my ($self) = @_;
-	return ("us.pm utilizes the USPTO web site.\n
+	return (
+		"WWW::Patent::Page utilizes the USPTO web site.\n
 Refer to http://www.USPTO.gov for terms and conditions of use of that site.
 	
 Note that as of September 1, 2004, 
@@ -272,8 +306,52 @@ pages of a patent at once may find this practice subjects them to denial
 of access to the databases if they exceed PTO's maximum allowable 
 activity levels.
 
-" );
+"
+	);
 }
-
-
 1;
+
+__END__
+
+=head1 WWW::Patent::Page::USPTO
+
+support the use of the United States Patent and Trademark Office web site
+	
+=cut
+
+=head2 methods
+
+set up the methods available for each document type 
+
+=cut
+
+=head2 USPTO_tif
+
+tif capture and manipulation
+
+This is where the fun stuff happens.  TODO:  append the tiffs pagewise into a pdf; provide USPTO_pdf .
+
+=cut
+
+=head2 USPTO_htm
+
+htm capture and manipulation
+
+This is where the fun stuff happens.  TODO:  better error handling .
+
+=cut
+
+=head2 USPTO_terms
+
+terms of use
+
+=cut
+
+
+=head2 USPTO_country_known
+
+hash with keys of two letter acronyms, values of the dates covered
+
+=cut
+
+

@@ -1,11 +1,34 @@
-# http://module-build.sourceforge.net/META-spec.html
-#XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
-name:         WWW-Patent-Page
-version:      0.01
-version_from: lib/WWW/Patent/Page.pm
-installdirs:  site
+---
+name: WWW-Patent-Page
+version: 0.02
+author: ~
+abstract: |-
+  get a patent page or document (e.g. htm, pdf, tif) 
+  from selected source (e.g. from United States Patent and Trademark Office 
+  (USPTO) website or the European Patent Office (ESPACE_EP). and
+  place into a WWW::Patent::Page::Response object)
+license: perl
 requires:
-    Test::Simple:                  0.44
-
-distribution_type: module
-generated_by: ExtUtils::MakeMaker version 6.21
+  HTML::HeadParser: 0
+  HTML::TokeParser: 0
+  HTTP::Request: 0
+  HTTP::Response: 0
+  LWP::UserAgent: 2.003
+  PDF::API2: 0
+  diagnostics: 0
+  strict: 0
+  warnings: 0
+provides:
+  WWW::Patent::Page:
+    file: lib/WWW/Patent/Page.pm
+    version: 0.02
+  WWW::Patent::Page::ESPACE_EP:
+    file: lib/WWW/Patent/Page/ESPACE_EP.pm
+    version: 0.2
+  WWW::Patent::Page::Response:
+    file: lib/WWW/Patent/Page/Response.pm
+    version: 0.02
+  WWW::Patent::Page::USPTO:
+    file: lib/WWW/Patent/Page/USPTO.pm
+    version: 0.1
+generated_by: Module::Build version 0.2611

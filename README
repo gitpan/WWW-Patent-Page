@@ -1,33 +1,50 @@
+pod2text WWW::Patent::Page.pm > README
+
+perldoc -t WWW::Patent::Page > README
+
 NAME
-    WWW::Patent::Page - retrieve a patent page (e.g. from United States
-    Patent and Trademark Office (USPTO) website or the European Patent
-    Office (ESPACE_EP). )
+    WWW::Patent::Page - get a patent page or document (e.g. htm, pdf, tif)
+    from selected source (e.g. from United States Patent and Trademark
+    Office (USPTO) website or the European Patent Office (ESPACE_EP). and
+    place into a WWW::Patent::Page::Response object)
 
 SYNOPSIS
     Please see the test suite for working examples. The following is not
     guaranteed to be working or up-to-date.
 
-      use WWW::Patent::Page;
-
-      my $patent_document = WWW::Patent::Page->new(); # new object
+      $ perl -I. -MWWW::Patent::Page -e 'print $WWW::Patent::Page::VERSION,"\n"'
+      0.02
   
-      my $document1 = $patent_document->provide_doc('6,123,456');
-            # defaults:     office  => 'USPTO',
-            #               country => 'US',
-            #               format  => 'htm',
-            #               page    => '1',      # typically htm IS "1" page
-            #               modules => qw/ us ep / ,
+      $ perl get_patent.pl US6123456 > US6123456.pdf &  
+  
+      (command line interface is included in examples)
+  
+      http://www.yourdomain.com/www_get_patent_pdf.pl    
+  
+      (web fetcher is included in examples)
 
-      my $document2 = $patent_document->provide_doc('US_6_123_456', 
+      use WWW::Patent::Page;
+  
+      print $WWW::Patent::Page::VERSION,"\n";
+
+      my $patent_browser = WWW::Patent::Page->new(); # new object
+  
+      my $document1 = $patent_document->get_page('6,123,456');
+            # defaults:     
+            #       office  => 'ESPACE_EP',
+            #           country => 'US',
+            #           format      => 'pdf',
+            #               page    => undef ,  
+            # and usual defaults of LWP::UserAgent (subclassed)
+
+      my $document2 = $patent_document->get_page('US6123456', 
                             office  => 'ESPACE_EP' ,
-                            format  => 'tif',
-                            page    => 2 ,
+                            format  => 'pdf',
+                            page    => 2 ,  #get only the second page
                             );
 
-      my $pages_known = $patent_document->pages_available(  # e.g. TIFF
-                            document=> '6 123 456',
-                            );
-                        
+      my $pages_known = $document2->get_parameter('pages');  #how many total pages known?
+                                                
 DESCRIPTION
       Intent:  Use public sources to retrieve patent documents such as
       TIFF images of patent pages, html of patents, pdf, etc.
@@ -39,63 +56,23 @@ USAGE
   
          Standard process for building & installing modules:
 
-              perl Makefile.PL
-              make
-              make test
-              make install
+              perl Build.PL
+              ./Build
+              ./Build test
+              ./Build install
 
     Examples of use:
 
-      $patent_document = WWW::Patent::Page->new(
-                            doc_id  => 'US6,654,321(B2)issued_2_Okada',
+      $patent_browser = WWW::Patent::Page->new(
+                            doc_id  => 'US6,654,321',
                             office  => 'ESPACE_EP' ,
-                            format  => 'tif',
-                            page    => 2 ,
+                            format  => 'pdf',
+                            page    => undef ,  # returns all pages in one pdf 
                             agent   => 'Mozilla/5.0 (Windows; U; Windows NT 5.0; en-US; rv:1.4b) Gecko/20030516 Mozilla Firebird/0.6',
                             );
-                        
-    # 'Windows IE 6' => 'Mozilla/4.0 (compatible; MSIE 6.0; Windows NT
-    5.1)',
-
-    # 'Windows Mozilla' => 'Mozilla/5.0 (Windows; U; Windows NT 5.0; en-US;
-    rv:1.4b) Gecko/20030516 Mozilla Firebird/0.6',
-
-    # 'Mac Safari' => 'Mozilla/5.0 (Macintosh; U; PPC Mac OS X; en-us)
-    AppleWebKit/85 (KHTML, like Gecko) Safari/85',
-
-    # 'Mac Mozilla' => 'Mozilla/5.0 (Macintosh; U; PPC Mac OS X Mach-O;
-    en-US; rv:1.4a) Gecko/20030401',
-
-    # 'Linux Mozilla' => 'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.4)
-    Gecko/20030624',
-
-    # 'Linux Konqueror' => 'Mozilla/5.0 (compatible; Konqueror/3; Linux)',
-
-      my %attributes = $patent_document->get_patent('all');  # hash of all
-
-      my $document_id = $patent_document->get_patent('doc_id'); 
-            # US6,654,321(B2)issued_2_Okada
-
-      my $office_used = $patent_document->get_patent('office'); # ep 
-
-      my $country_used = $patent_document->get_patent('country'); #US
-
-      my $doc_id_used = $patent_document->get_patent('doc_id');  # 6654321
-
-      my $page_used = $patent_document->get_patent('page');  # 2
-
-      my $kind_used = $patent_document->get_patent('kind');  # B2 
-
-      my $comment_used = $patent_document->get_patent('comment');  # issued_2_Okada 
-
-      my $format_used = $patent_document->get_patent('format'); #tif
-
-      my $pages_total = $patent_document->get_patent('pages_available');   # 101  
-
-      my $terms_and_conditions = $patent_document->terms('us'); # and conditions
-  
-      my $document = $patent_document->get_patent('document'); # the loot
-
+        
+            $patent_response = $patent_browser->get_patent('US6,654,321(B2)issued_2_Okada');
+        
 BUGS
     Pre-alpha release, to gauge whether the perl community has any interest.
 
@@ -124,24 +101,54 @@ COPYRIGHT
     with this module.
 
 ACKNOWLEDGEMENTS
-    Andy Lester for WWW::Mechanize, that got me thinking,
-
-    The authors of Finance::Quote, which served as an example of providing
-    submodules,
-
-    Erik Oliver for patentmailer, serving as an example of getting patent
-    documents,
-
+    You, the user (including those already suggesting improvements), Andy
+    Lester, the authors of Finance::Quote, Erik Oliver for patentmailer,
     Howard P. Katseff of AT&T Laboratories for wsp.pl, version 2, a proxy
-    that speaks LWP and understands proxies,
-
-    and of course Larry and Randal and the gang.
+    that speaks LWP and understands proxies, and of course Larry and Randal
+    and the gang.
 
 SEE ALSO
     perl(1).
 
-  Subroutine _countries_known()
-     Usage     : internal method only
-     Purpose   : list all entities that could give a patent
-     Returns   : ref to a hash with keys of abbreviations and values of entities (usually a country)  ...
+Subroutines
+  new
+    NEW instance of the Page class, subclassing LWP::UserAgent
+
+  country_known
+    country_known maps the known two letter acronyms to patenting entities,
+    usually countries; country_known returns undef if the two letter acronym
+    is not recognized.
+
+  parse_doc_id
+    Takes a human readable patent/publication identifier and parses it into
+    country/entity, kind, number, type, ...
+
+         CC[TY]##,###,###(V#)Comments
+     
+         CC : Two letter country/entity code; e.g. US, EP, WO
+         TY  : Type of document; one or two letters only of these choices:
+                    e.g. in US, Kind = Utility is default and no "Kind" is used, e.g. US6123456
+                    D : Design, e.g. USD339,456
+                    PP: Plant, e.g. USPP8,901
+                    RE: Reissue, e.g. USRE35,312
+                    T : Defensive Publication, e.g. UST109,201
+                    SIR: Statutory Invention Registration, e.g. USH1,523
+          V# : the version number, e.g. A1, B2, etc.; placed in parenthesis
+          Comments:  retained but not used- single string of word characters \w = A-z0-9_ (no spaces, "-", commas, etc.)
+                
+  get_page
+    method to use the modules specific to Offices like USPTO, with methods
+    for each document/page format, etc., and LWP::Agent to grab the
+    appropriate URLs and if necessary build the response content or produce
+    error values
+
+  terms
+    method to provide a summary or pointers to the terms and conditions of
+    use of the publicly available databases
+
+  _load_modules
+    internal private method to access helper modules in WWW::Patent::Page
+
+  _agent
+    private method to assign default agent
 

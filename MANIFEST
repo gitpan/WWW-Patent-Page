@@ -1,13 +1,18 @@
 MANIFEST
+META.yml
 LICENSE
 README
 Todo
 Changes
 lib/WWW/Patent/Page.pm
 lib/WWW/Patent/Page/USPTO.pm
+lib/WWW/Patent/Page/Response.pm
 lib/WWW/Patent/Page/ESPACE_EP.pm
+examples/get_patent.pl
+examples/www_get_patent_pdf.pl
 t/001_load.t
+t/015_pod_coverage.t
 t/050_espace_ep.t
 t/100_uspto.t
+Build.PL
 Makefile.PL
-META.yml                                 Module meta-data (added by MakeMaker)
