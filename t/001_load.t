@@ -3,7 +3,7 @@ use strict;
 
 # t/001_load.t - check module loading and create testing directory
 
-use Test::More tests => 18;    # perlobj
+use Test::More tests => 30;    # perlobj
 
 BEGIN { use_ok('WWW::Patent::Page'); }
 
@@ -54,4 +54,80 @@ is( $browser->{'patent'}->{'number'}, 6123456 , 'number from doc_id becomes the 
 $browser = WWW::Patent::Page->new('EP6123456');    
 
 is( $browser->{'patent'}->{'country'}, 'EP', 'object records doc_ID as EP when passed as value not parameter, overriding default' );
+
+my $patent_document = WWW::Patent::Page->new();    # new object
+
+my $document2 = $patent_document->get_page(
+	'country'=> '',
+	'number' => '1234567',
+	'office' => 'ESPACE_EP',
+	'format' => 'pdf',
+	'page'   => 1,
+);
+
+ok( !$document2->is_success, 'correctly failed due to no country');
+like( $document2->message, qr/country/ , 'correct failure message about country');   #20
+
+$document2 = $patent_document->get_page(
+	'YY9999999',
+	'office' => 'ESPACE_EP',
+	'format' => 'pdf',
+	'page'   => 1,
+);
+
+
+ok( !$document2->is_success, 'correctly failed due to no malformed request, no method');
+like( $document2->message, qr/country/ , "Message: '".$document2->message."'" ); #22
+
+
+
+ $document2 = $patent_document->get_page(
+	'country'=> 'EP',
+	'number' => '',
+	'office' => 'ESPACE_EP',
+	'format' => 'pdf',
+	'page'   => 1,
+);
+
+ok( !$document2->is_success, 'correctly failed due to no number');
+like( $document2->message, qr/number/ , 'correct failure message about number.'." Message: '".$document2->message."'" ); 
+
+
+ $document2 = $patent_document->get_page(
+	'country'=> 'EP',
+	'number' => '1234567',
+	'office' => '',
+	'format' => 'pdf',
+	'page'   => 1,
+);
+
+ok( !$document2->is_success, 'correctly failed due to no office');
+like( $document2->message, qr/office/ , 'correct failure message about office.'." Message: '".$document2->message."'" ); 
+
+
+
+ $document2 = $patent_document->get_page(
+	'country'=> 'EP',
+	'number' => '1234567',
+	'office' => 'ESPACE_EP',
+	'format' => '',
+	'page'   => 1,
+);
+
+ok( !$document2->is_success, 'correctly failed due to no format');
+like( $document2->message, qr/format/ , 'correct failure message about format.'." Message: '".$document2->message."'" ); 
+
+
+
+ $document2 = $patent_document->get_page(
+	'country'=> 'EP',
+	'number' => '1234567',
+	'office' => 'ESPACE_EP',
+	'format' => 'pdfpdf',
+	'page'   => 1,
+);
+
+ok( !$document2->is_success, 'correctly failed due to no malformed request, no method');
+like( $document2->message, qr/method/ , 'correct failure message about method.'." Message: '".$document2->message."'" ); 
+
 

@@ -6,10 +6,10 @@ use warnings;
 use diagnostics;
 use Carp;
 
-use subs qw( new get_parameter set_parameter content );
+use subs qw( new get_parameter set_parameter content is_success message );
 our ($VERSION);
 
-$VERSION = 0.02;
+$VERSION = 0.021;
 
 sub new    #_HTTP_Response
 {
@@ -45,6 +45,14 @@ sub new    #_HTTP_Response
 sub content {
 	my $self = shift;
 	return ($self->{'content'})
+}
+sub is_success {
+	my $self = shift;
+	return ($self->{'is_success'})
+}
+sub message {
+	my $self = shift;
+	return ($self->{'message'})
 }
 
 sub get_parameter {

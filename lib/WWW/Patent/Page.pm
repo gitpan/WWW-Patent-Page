@@ -1,5 +1,5 @@
 
-package WWW::Patent::Page;    #modeled on LWP::UserAgent
+package WWW::Patent::Page;    #modeled vaguely on LWP::UserAgent
 use strict;
 use warnings;
 use diagnostics;
@@ -9,7 +9,7 @@ require LWP::UserAgent;
 use subs qw( new country_known get_page _load_modules _agent );
 our ( $VERSION, @ISA, %MODULES, %METHODS, %_country_known, $default_country );
 
-$VERSION = 0.02; @ISA = qw( LWP::UserAgent );
+$VERSION = 0.03; @ISA = qw( LWP::UserAgent );
 
 $default_country = 'US';
 
@@ -96,6 +96,7 @@ sub parse_doc_id {
 			$self->{'patent'}->{'country'} =
 				uc($1);    # remove and upper case the country if found
 			if ( !$_country_known{ $self->{'patent'}->{'country'} } ) {
+
 				carp "unrecognized country: $self->{'patent'}->{'country'}";
 				$self->{'patent'}->{'country'} = '';
 				return (undef);
@@ -127,19 +128,20 @@ sub parse_doc_id {
 		$self->{'patent'}->{'comment'} = $$id;
 		$found .= " version:$self->{'patent'}->{'comment'} ";
 	}
-			if ( exists( $self->{'patent'}->{'type'} )
-			&& $self->{'patent'}->{'type'} eq 'T' )
-		{
-			my $text = reverse $self->{'patent'}->{'number'};
-			$text =~ s/(\d\d\d)(?=\d)(?!\d*\.)/$1,/g;
-			$self->{'patent'}->{'number'} = scalar reverse $text;
-		}
-	
+	if ( exists( $self->{'patent'}->{'type'} )
+		&& $self->{'patent'}->{'type'} eq 'T' )
+	{
+		my $text = reverse $self->{'patent'}->{'number'};
+		$text =~ s/(\d\d\d)(?=\d)(?!\d*\.)/$1,/g;
+		$self->{'patent'}->{'number'} = scalar reverse $text;
+	}
+
 	return $found;
 }
 
 sub get_page {
 	my $self = shift;
+	$self->{'patent'}->{'doc_id'} = undef;
 	if ( @_ % 2 ) {
 		$self->{'patent'}->{'doc_id'} = shift @_;
 
@@ -161,14 +163,63 @@ sub get_page {
 		}
 	}
 
-	$self->parse_doc_id();    # in case of change
+	if ( $self->{'patent'}->{'doc_id'} ) { $self->parse_doc_id(); }
+
+#	if (!$self->parse_doc_id()) {
+#		$response->set_parameter('is_success', undef );
+#		if (!$self->{'patent'}->{'office'}) {$response->set_parameter('message', 'no country set' );}
+#	}
+# in case of change
+	my $response =
+		WWW::Patent::Page::Response->new( %{ $self->{'patent'} } )
+		;    # make it here to run sanity tests
+
+	if ( !$response->get_parameter('country') ) {
+		$response->set_parameter( 'is_success', undef );
+		$response->set_parameter( 'message',    'no country defined' );
+		return $response;
+	}
+	if ( !$_country_known{ $response->get_parameter('country') } ) {
+		$response->set_parameter( 'is_success', undef );
+		$response->set_parameter( 'message',
+			      "country '"
+				. $response->get_parameter('country')
+				. "' not recognized" );
+		return $response;
+	}
+
+	if ( !$response->get_parameter('number') ) {
+		$response->set_parameter( 'is_success', undef );
+		$response->set_parameter( 'message',    'no patent number defined' );
+		return $response;
+	}
+	if ( !$response->get_parameter('office') ) {
+		$response->set_parameter( 'is_success', undef );
+		$response->set_parameter( 'message',    'no office defined' );
+		return $response;
+	}
+	if ( !$response->get_parameter('format') ) {
+		$response->set_parameter( 'is_success', undef );
+		$response->set_parameter( 'message',    'no format defined' );
+		return $response;
+	}
 
 	my $provide_doc =
 		  "$self->{'patent'}->{'office'}" . '_'
 		. "$self->{'patent'}->{'format'}";
+
+	if ( !exists( $METHODS{$provide_doc} ) ) {    
+		$response->set_parameter( 'is_success', undef );
+		$response->set_parameter( 'message',
+			"method '$provide_doc' not provided" );
+		return $response;
+	}
+
 	my $function_reference = $METHODS{$provide_doc}
 		or carp "No method '$provide_doc'";
-	my $response = &$function_reference($self)
+	$response =
+		&$function_reference( $self,
+		$response )    # pass our hash to a specific fetcher
 		or carp "No response for method '$provide_doc'";
 
 	if ($response) { return ($response); }
@@ -177,17 +228,21 @@ sub get_page {
 }
 
 sub terms {
-	my $self = shift;  # pass $self, then optionally the office whose terms you need, or use that office set in $self
+	my $self = shift
+		; # pass $self, then optionally the office whose terms you need, or use that office set in $self
 	my $office;
-	if ( @_ % 2 ) { $office = shift @_ } else {$office = $self->{'patent'}->{'office'}}
-	if (!exists $METHODS{$office.'_terms'}) {
-		carp "Undefined method $office"."_terms in Patent:Document::Retrieve";
-		return ('WWW::Patent::Page uses publicly available information that may be subject to copyright.  
-		The user is responsible for observing intellectual property rights. ');
+	if ( @_ % 2 ) { $office = shift @_ }
+	else { $office = $self->{'patent'}->{'office'} }
+	if ( !exists $METHODS{ $office . '_terms' } ) {
+		carp "Undefined method $office"
+			. "_terms in Patent:Document::Retrieve";
+		return (  'WWW::Patent::Page uses publicly available information that may be subject to copyright.  
+		The user is responsible for observing intellectual property rights. '
+		);
 	}
-	my $terms = $office.'_terms';
+	my $terms              = $office . '_terms';
 	my $function_reference = $METHODS{$terms};
-	return &$function_reference($self);	
+	return &$function_reference($self);
 }
 
 sub _agent {"WWW::Patent::Page/$WWW::Patent::Page::VERSION"}

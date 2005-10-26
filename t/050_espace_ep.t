@@ -106,8 +106,6 @@ $document2 = $patent_document->get_page(
 	'page'   => 1,
 );
 
-
-
 like( $document2->content, qr/40274/,
 	'EP 1 234 567 page 1, CCITTFaxDecode 40,274 bytes ' );
 

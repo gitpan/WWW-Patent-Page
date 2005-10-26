@@ -16,7 +16,7 @@ use WWW::Patent::Page::Response;
 
 our ( $VERSION, @ISA, %_country_known );
 
-$VERSION = "0.2";
+$VERSION = "0.21";
 
 sub methods {
 	return (
@@ -39,16 +39,21 @@ sub ESPACE_EP_country_known {
 }
 
 sub ESPACE_EP_pdf {
-	my ($self) = @_;
-	my $response = WWW::Patent::Page::Response->new( %{ $self->{'patent'} } );
+	my ($self,$response) = @_;
 	my (   $url,       $request, $http_response, $base,
 		$zero_fill, $html,    $p,             $referer,
 		%bookmarks, $first,   $last
 	);
+	if (!$self->{'patent'}{'country'}) {
+		$response->{'message'} =
+			"country not specified (or doc_id has unrecognized country)";
+		$response->{'is_success'} = undef;
+		return ($response);
+		}
 	if ( !&ESPACE_EP_country_known($self, $self->{'patent'}{'country'} ) )
 	{    #unrecognized country
 		$response->{'message'} =
-			"country '$self->{'patent'}{'country'}' unrecognized";
+			"country '".$self->{'patent'}{'country'}."' unrecognized";
 		$response->{'is_success'} = undef;
 		return ($response);
 	}
@@ -190,6 +195,7 @@ my $font = $pdf->corefont('Helvetica'); # Use Helvetica throughout
 
 		if ( $response->set_parameter( 'content', $pdf->stringify() ) )
 		{                                         
+			$response->{'is_success'} = 'pdf successfully built';
 			return $response;
 		}
 	}

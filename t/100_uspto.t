@@ -2,7 +2,7 @@
 
 # t/001_load.t - test documented interface
 
-use Test::More tests => 21;
+use Test::More tests => 23;
 BEGIN { use_ok('WWW::Patent::Page'); }
 
 my $patent_document = WWW::Patent::Page->new();    # new object
@@ -29,7 +29,7 @@ my $document_id = $document1->get_parameter('doc_id');
 is( $document_id, '4,299,215', 'doc_id = 4,299,215' );
 
 my $office_used = $document1->get_parameter('office');
-is( $office_used, 'USPTO', 'Office is us' );
+is( $office_used, 'USPTO', 'Office is USPTO' );
 
 my $country_used = $document1->get_parameter('country');
 is( $country_used, 'US', 'country US' );
@@ -100,3 +100,15 @@ like(
 	qr/ornamental design for a shoe sole/,
 	'D339,456: retrieve the sole of Kayano of Asics'
 );
+
+$document1 = $patent_document->get_page(
+	'country'=> 'US',
+	'number' => '9999999',
+	'office' => 'USPTO',
+	'format' => 'htm',
+	'page'   => 1,
+);
+
+ok( !$document1->is_success, 'correctly failed due to patent not found');
+like( $document1->message, qr/No patents/ , 'correct failure message about patent not found.'." Message: '".$document1->message."'" ); 
+

@@ -1,5 +1,8 @@
 Revision history for Perl module WWW::Patent::Page
 
+0.03 Major Changes:
+	error reporting, sanity checks
+
 0.02 Major Changes:
 	underlying logic made closer to LWP::UserAgent + HTTP::Response
 	changed some defaults

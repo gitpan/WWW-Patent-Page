@@ -5,7 +5,7 @@ use warnings;
 use diagnostics;
 use Carp;
 use subs
-	qw( methods USPTO_country_known  USPTO_htm USPTO_tif USPTO_terms  );
+	qw( methods USPTO_country_known  USPTO_htm USPTO_tif 	USPTO_terms  );  #USPTO_pdf
 use LWP::UserAgent 2.003;
 require HTTP::Request;
 use HTML::HeadParser;
@@ -13,12 +13,13 @@ use HTML::TokeParser;
 
 use vars qw/ $VERSION @ISA/;
 
-$VERSION = "0.1";
+$VERSION = "0.21";
 
 sub methods {
 	return (
 		'USPTO_htm'                 => \&USPTO_htm,
 		'USPTO_tif'                 => \&USPTO_tif,
+#		'USPTO_pdf'                 => \&USPTO_pdf,
 		'USPTO_country_known' => \&USPTO_country_known,
 #		'USPTO_parse_doc_id'        => \&USPTO_parse_doc_id,
 		'USPTO_terms'               => \&USPTO_terms,
@@ -33,9 +34,7 @@ sub USPTO_country_known {
 }
 
 sub USPTO_htm {
-	my ($self) = @_;
-	my $page_response =
-		WWW::Patent::Page::Response->new( %{ $self->{'patent'} } );
+	my ($self,$page_response) = @_;
 	my $request;
 	my $request_text;
 	if (   ( !$self->{'patent'}->{'type'} )
@@ -102,6 +101,13 @@ sub USPTO_htm {
 			$response = $self->request($request);
 			$html     = $response->content;
 		}
+		
+		if ($html =~ m/No patents have matched your query/) {
+			$page_response->set_parameter( 'is_success', undef );
+			$page_response->set_parameter( 'message',    'No patents have matched your query' );
+			return $page_response;			
+		}
+		
 		unless ( $html =~
 			s/.*?<html>.*?<head>/<html>\n<head><!-- Modified by perl module WWW::Patent::Page from information provided by http:\/\/www.uspto.gov ; dedicated to public ; use at own risk -->\n<title>US /is
 			)
@@ -139,9 +145,7 @@ sub USPTO_htm {
 }
 
 sub USPTO_tif {
-	my ($self) = @_;
-	my $page_response =
-		WWW::Patent::Page::Response->new( %{ $self->{'patent'} } );
+	my ($self, $page_response) = @_;
 	my ( $request, $base, $zero_fill );
 
 #  Direct access to the full-page image database is now
@@ -237,6 +241,13 @@ FINDPAGE: while ( my $token = $p->get_tag("a") ) {
 	$page_response->set_parameter( 'content', $response->content );
 	return $page_response;
 }
+
+#sub USPTO_pdf {
+#	my ($self, $page_response) = @_;   # TODO: knit tiffs into PDF
+#
+#	return $page_response;
+#}
+
 
 sub USPTO_terms {
 	my ($self) = @_;
