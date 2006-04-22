@@ -9,13 +9,12 @@ require LWP::UserAgent;
 use subs qw( new country_known get_page _load_modules _agent );
 our ( $VERSION, @ISA, %MODULES, %METHODS, %_country_known, $default_country );
 
-$VERSION = 0.03; @ISA = qw( LWP::UserAgent );
+$VERSION = 0.04; @ISA = qw( LWP::UserAgent );
 
 $default_country = 'US';
 
 sub new {
 	my ($class) = shift @_;
-
 	my %parent_parms = (
 		agent => "WWW::Patent::Page/$VERSION",
 
@@ -32,13 +31,16 @@ sub new {
 		'comment' => undef,
 		'kind'    => undef,
 		'number'  => undef,
+		'tempdir' => undef,	    # directory for temp files USPTO_pdf
 	);
-	if ( @_ % 2 ) { $default_parameter{'doc_id'} = shift @_ }
-
+	if ( @_ % 2 ) { $default_parameter{'doc_id'} = shift @_ ;}
+		
 	# if an odd number of parameters is passed, the first is the doc_id
 	# the other pairs are the hash of values, including UserAgent settings
-
+	
 	my %passed_parms = @_;
+	
+#	if ( defined($passed_parms{'country'} or defined($passed_parms{'number'}) { delete $passed_parms{'doc_id'}; $self->{'patent'}->{'doc_id'} = undef  }
 
  # Keep the patent-specific parms before creating the object.
  # (the parameters defined above are the only user exposed parameters allowed)
@@ -67,8 +69,11 @@ sub new {
 	$self->_load_modules(qw( USPTO ESPACE_EP))
 		;  # list your custom modules here,
 	       # and put them into the folder that holds the others, e.g. USPTO.pm
-
-	if ( $self->{'patent'}->{'doc_id'} ) {   # if called with doc ID, parse it
+	if ( defined($passed_parms{'country'}) and defined($passed_parms{'number'}) ) { 
+		delete $passed_parms{'doc_id'}; 
+		$self->{'patent'}->{'doc_id'} = $passed_parms{'country'}.$passed_parms{'number'}  
+	}
+	if ( $self->{'patent'}->{'doc_id'} ) {   # if called with doc ID, parse it- unless it seems to be parsed already 
 		$self->parse_doc_id();
 	}
 	return $self;
@@ -141,7 +146,7 @@ sub parse_doc_id {
 
 sub get_page {
 	my $self = shift;
-	$self->{'patent'}->{'doc_id'} = undef;
+	# $self->{'patent'}->{'doc_id'} = undef;
 	if ( @_ % 2 ) {
 		$self->{'patent'}->{'doc_id'} = shift @_;
 
@@ -151,6 +156,7 @@ sub get_page {
 	}
 
 	my %passed_parms = @_;
+#	if ( defined($passed_parms{'country'} or defined($passed_parms{'number'}) { delete $passed_parms{'doc_id'}; $self->{'patent'}->{'doc_id'} = undef }
 
  # Keep the patent-specific parms before USING the object.
  # (the parameters defined above are the only user exposed parameters allowed)
@@ -164,6 +170,10 @@ sub get_page {
 	}
 
 	if ( $self->{'patent'}->{'doc_id'} ) { $self->parse_doc_id(); }
+#	force use USPTO for US patents
+#		(must not over rule user's choice of office to use)
+#	if ($self->{'patent'}->{'country'} eq 'US') {$self->{'patent'}->{'office'} = "USPTO";}
+#	
 
 #	if (!$self->parse_doc_id()) {
 #		$response->set_parameter('is_success', undef );

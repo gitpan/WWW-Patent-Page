@@ -11,8 +11,10 @@ lib/WWW/Patent/Page/ESPACE_EP.pm
 examples/get_patent.pl
 examples/www_get_patent_pdf.pl
 t/001_load.t
+t/014_pod.t
 t/015_pod_coverage.t
 t/050_espace_ep.t
 t/100_uspto.t
+t/105_uspto_pdf.t
 Build.PL
 Makefile.PL

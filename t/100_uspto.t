@@ -102,6 +102,7 @@ like(
 );
 
 $document1 = $patent_document->get_page(
+	'doc_id' => '',
 	'country'=> 'US',
 	'number' => '9999999',
 	'office' => 'USPTO',
@@ -110,5 +111,28 @@ $document1 = $patent_document->get_page(
 );
 
 ok( !$document1->is_success, 'correctly failed due to patent not found');
-like( $document1->message, qr/No patents/ , 'correct failure message about patent not found.'." Message: '".$document1->message."'" ); 
+like( $document1->message, qr/No patents/ , 'correct failure message about patent not found.'." Message: '".$document1->message. "'" ); 
+
+#print $document1->content; 
+
+# TO DO
+# Utility --   	5,146,634 6923014 0000001
+# Design -- 	D339,456 D321987 D000152
+# Plant -- 	PP08,901 PP07514 PP00003
+# Reissue -- 	RE35,312 RE12345 RE00007
+# Defensive Publication -- 	T109,201 T855019 T100001
+# Statutory Invention Registration -- 	H001,523 H001234 H000001
+# Re-examination -- 	RX29,194 RE29183 RE00125
+# Additional Improvement -- 	AI00,002 AI000318 AI00007
+
+#US
+#All patent numbers must be seven characters in length, excluding commas, which
+#are optional. Examples:
+
+#PP07514 not PP7514
+#RE35,312 reissue
+#H001,523 SIR
+#T109,201
+
+
 

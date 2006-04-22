@@ -29,6 +29,7 @@ sub new    #_HTTP_Response
 		'page'       => undef,
 		'version'    => undef,
 		'comment'    => undef,
+		'tempdir'    => undef,
 	};
 	for my $key ( keys %patent_parameters_passed ) {
 		if ( exists $self->{$key} ) {
@@ -198,6 +199,14 @@ Access parameters, including content, programmatically (politely).
 =head2 set_parameter
 
 a classic
+
+=head2 message
+
+the message
+
+=head2 is_success
+
+not failed
 
 =cut
 

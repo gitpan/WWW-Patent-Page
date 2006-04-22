@@ -1,5 +1,12 @@
 Revision history for Perl module WWW::Patent::Page
 
+0.04 added USPTO_pdf: pdf delivery for USPTO
+     uses File::Temp for save handling of temporary files
+     added tempdir to specify working directory
+     Thanks to H. Schier h.schier@fkf.mpg.de
+     
+     Added Test::Pod to pass Pod for Kwalitee- Wanda
+
 0.03 Major Changes:
 	error reporting, sanity checks
 

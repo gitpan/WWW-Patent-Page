@@ -1,6 +1,6 @@
 ---
 name: WWW-Patent-Page
-version: 0.03
+version: 0.04
 author: ~
 abstract: |-
   get a patent page or document (e.g. htm, pdf, tif) 
@@ -21,7 +21,7 @@ requires:
 provides:
   WWW::Patent::Page:
     file: lib/WWW/Patent/Page.pm
-    version: 0.03
+    version: 0.04
   WWW::Patent::Page::ESPACE_EP:
     file: lib/WWW/Patent/Page/ESPACE_EP.pm
     version: 0.21
@@ -30,5 +30,5 @@ provides:
     version: 0.021
   WWW::Patent::Page::USPTO:
     file: lib/WWW/Patent/Page/USPTO.pm
-    version: 0.21
+    version: 0.24
 generated_by: Module::Build version 0.2611

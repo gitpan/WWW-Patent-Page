@@ -1,7 +1,8 @@
 TODO list for Perl module WWW::Patent::Page
 
-- make USPTO_pdf by appending tiff into a PDF
 
+- the interpertation of doc_id should probably be a function of office;
+	since ESPACE and USPTO do it different for plant and such
 - more error reporting, when patent retrieval is refused by office
 
 
