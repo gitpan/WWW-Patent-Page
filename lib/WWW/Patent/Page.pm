@@ -9,7 +9,7 @@ require LWP::UserAgent;
 use subs qw( new country_known get_page _load_modules _agent );
 our ( $VERSION, @ISA, %MODULES, %METHODS, %_country_known, $default_country );
 
-$VERSION = 0.04; @ISA = qw( LWP::UserAgent );
+$VERSION = 0.05; @ISA = qw( LWP::UserAgent );
 
 $default_country = 'US';
 
@@ -102,7 +102,7 @@ sub parse_doc_id {
 				uc($1);    # remove and upper case the country if found
 			if ( !$_country_known{ $self->{'patent'}->{'country'} } ) {
 
-				carp "unrecognized country: $self->{'patent'}->{'country'}";
+				carp "\nunrecognized country: $self->{'patent'}->{'country'}\n";
 				$self->{'patent'}->{'country'} = '';
 				return (undef);
 			}

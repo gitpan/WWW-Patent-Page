@@ -11,7 +11,7 @@ require HTTP::Request;
 use URI;
 use HTML::Form;
 use URI;
-use PDF::API2;
+use PDF::API2 2.000;
 use WWW::Patent::Page::Response;
 
 our ( $VERSION, @ISA, %_country_known );

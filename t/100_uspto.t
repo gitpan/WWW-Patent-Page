@@ -73,18 +73,18 @@ like(
 	qr/ornamental design for a shoe sole/,
 	'D339,456: retrieve the sole of Kayano of Asics'
 );
-$document1 = $patent_document->get_page('USPP8,901');
+$document1 = $patent_document->get_page('USPP08,901');
 like(
 	$document1->content, 
 	qr/Parentage: Unknown; selected from among several/,
-	'PP8,901: Enkianthus perulatus'
+	'PP08,901: Enkianthus perulatus'
 );
 $document1 = $patent_document->get_page('USRE35,312');
 like( $document1->content , qr/endospongestick probe/, 'RE35,312' );
-$document1 = $patent_document->get_page('USH1,523');
+$document1 = $patent_document->get_page('USH001,523');
 like( $document1->content ,
 	qr/olymer film having a conductivity gradient across its thickness/,
-	'H1,523' );
+	'H001,523' );
 $document1 = $patent_document->get_page('UST109,201');
 like($document1->content , qr/optical alignment tool and method is described for setting a datum line/,
 	'T109,201');

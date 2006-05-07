@@ -12,7 +12,7 @@ use LWP::UserAgent 2.003;
 require HTTP::Request;
 use HTML::HeadParser;
 use HTML::TokeParser;
-use PDF::API2;
+use PDF::API2 2.00;
 use File::Temp 0.16 ;
 # use Data::Dumper::Simple;
 

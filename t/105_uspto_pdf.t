@@ -2,7 +2,7 @@
 
 # t/001_load.t - test documented interface
 
-use Test::More tests => 20;    
+use Test::More tests => 21;    
 
 BEGIN { use_ok('WWW::Patent::Page'); } #1
 
@@ -116,5 +116,6 @@ my $document3 = $patent_document->get_page(page  => undef);
 
 #print "length = ",length($document3->content);  # 631086
 
-is( length($document3->content), 631086,'US 6,123,456 all pages, is 631086 bytes.' );
+cmp_ok( length($document3->content), '>=', 631070,'US 6,123,456 all pages, is 631086 or 84 or 83 or so... bytes.' );
+cmp_ok( length($document3->content), '<=', 631099,'US 6,123,456 all pages, is 631086 or 84 or 83 or so... bytes.' );
 	
