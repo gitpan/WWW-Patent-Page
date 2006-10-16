@@ -1,4 +1,3 @@
-
 package WWW::Patent::Page;    #modeled vaguely on LWP::UserAgent
 use strict;
 use warnings;
@@ -9,7 +8,7 @@ require LWP::UserAgent;
 use subs qw( new country_known get_page _load_modules _agent );
 our ( $VERSION, @ISA, %MODULES, %METHODS, %_country_known, $default_country );
 
-$VERSION = 0.05; @ISA = qw( LWP::UserAgent );
+$VERSION = 0.06; @ISA = qw( LWP::UserAgent );
 
 $default_country = 'US';
 
@@ -17,12 +16,14 @@ sub new {
 	my ($class) = shift @_;
 	my %parent_parms = (
 		agent => "WWW::Patent::Page/$VERSION",
-
 		#        cookie_jar => {},
 	);
 
 	my %default_parameter = (
 		'office'  => 'ESPACE_EP',    # USPTO
+		'office_username' => '',  # e.g. MicroPatent account
+		'office_password' => '',  # e.g. MicroPatent password
+		'session_token' => '', # e.g. session number in Micropatent, from username and password 		
 		'country' => 'US',
 		'doc_id'  => undef,          # US6,123,456
 		'format'  => 'pdf',
@@ -63,10 +64,9 @@ sub new {
 	}
 	$self->env_proxy()
 		; # get the proxy stuff set up from the environment via LWP::UserAgent
-	push( @{ $self->requests_redirectable }, 'POST' );    # LWP::UserAgent
+	push( @{ $self->requests_redirectable }, 'POST' );    # redirect HTTP 1.1 302s  LWP::UserAgent
 	$self->agent = $class->_agent unless defined $self->agent;
-
-	$self->_load_modules(qw( USPTO ESPACE_EP))
+	$self->_load_modules(qw( USPTO ESPACE_EP MICROPATENT ))
 		;  # list your custom modules here,
 	       # and put them into the folder that holds the others, e.g. USPTO.pm
 	if ( defined($passed_parms{'country'}) and defined($passed_parms{'number'}) ) { 
@@ -170,16 +170,7 @@ sub get_page {
 	}
 
 	if ( $self->{'patent'}->{'doc_id'} ) { $self->parse_doc_id(); }
-#	force use USPTO for US patents
-#		(must not over rule user's choice of office to use)
-#	if ($self->{'patent'}->{'country'} eq 'US') {$self->{'patent'}->{'office'} = "USPTO";}
-#	
 
-#	if (!$self->parse_doc_id()) {
-#		$response->set_parameter('is_success', undef );
-#		if (!$self->{'patent'}->{'office'}) {$response->set_parameter('message', 'no country set' );}
-#	}
-# in case of change
 	my $response =
 		WWW::Patent::Page::Response->new( %{ $self->{'patent'} } )
 		;    # make it here to run sanity tests
@@ -253,6 +244,18 @@ sub terms {
 	my $terms              = $office . '_terms';
 	my $function_reference = $METHODS{$terms};
 	return &$function_reference($self);
+}
+
+sub login {
+	my $self = shift
+		; # pass $self, then optionally the office whose terms you need, or use that office set in $self
+	my $username = shift || $self->{'patent'}->{'office_username'};
+	my $password = shift ||  $self->{'patent'}->{'office_password'} ;
+ 	my $login  = $self->{'patent'}->{'office'} . '_login';
+ #	print $login ;
+	my $function_reference = $METHODS{$login};
+#	print $$function_reference ;
+	return &$function_reference($self,$username,$password );
 }
 
 sub _agent {"WWW::Patent::Page/$WWW::Patent::Page::VERSION"}
@@ -580,6 +583,13 @@ perl(1).
 =head2 new 
 
 NEW instance of the Page class, subclassing LWP::UserAgent
+
+=cut
+
+
+=head2 login 
+
+login to a server to use its services; obtain a token or session id or the like
 
 =cut
 

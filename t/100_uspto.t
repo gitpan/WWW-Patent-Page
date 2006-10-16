@@ -1,6 +1,6 @@
 # -*- perl -*-
 
-# t/001_load.t - test documented interface
+# t/100uspto.t - test documented interface
 
 use Test::More tests => 23;
 BEGIN { use_ok('WWW::Patent::Page'); }

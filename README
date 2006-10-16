@@ -7,6 +7,12 @@ NAME
     from selected source (e.g. from United States Patent and Trademark
     Office (USPTO) website or the European Patent Office (ESPACE_EP). and
     place into a WWW::Patent::Page::Response object)
+    
+TESTING
+
+    Install prerequisites before testing.  Testing will fail without prerequisites. 
+    Do not report failures to CPAN TESTERs without installing prerequisites.
+    Edit 200_micropatent.t with your username and password before testing.
 
 SYNOPSIS
     Please see the test suite for working examples. The following is not
@@ -47,12 +53,17 @@ SYNOPSIS
                                                 
 DESCRIPTION
       Intent:  Use public sources to retrieve patent documents such as
-      TIFF images of patent pages, html of patents, pdf, etc.
-      Expandable for your office of interest by writing new submodules..
-      Alpha release by newbie to find if there is any interest
+      TIFF images of patent pages, html of patents, pdf, xml, etc.
+      Expandable for your office of interest by writing new submodules.
+      Alpha release by newbie to find if there is any interest.
 
 USAGE
       See also SYNOPSIS above
+      
+    Install prerequisites before testing.  Testing will fail without prerequisites. 
+    Do not report failures to CPAN TESTERs without installing prerequisites.
+    Edit 200_micropatent.t with your username and password before testing.
+
   
          Standard process for building & installing modules:
 

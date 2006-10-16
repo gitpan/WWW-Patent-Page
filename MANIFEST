@@ -8,6 +8,7 @@ lib/WWW/Patent/Page.pm
 lib/WWW/Patent/Page/USPTO.pm
 lib/WWW/Patent/Page/Response.pm
 lib/WWW/Patent/Page/ESPACE_EP.pm
+lib/WWW/Patent/Page/MICROPATENT.pm
 examples/get_patent.pl
 examples/www_get_patent_pdf.pl
 t/001_load.t
@@ -16,5 +17,6 @@ t/015_pod_coverage.t
 t/050_espace_ep.t
 t/100_uspto.t
 t/105_uspto_pdf.t
+t/200_micropatent.t
 Build.PL
 Makefile.PL

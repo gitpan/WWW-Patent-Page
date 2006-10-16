@@ -39,10 +39,12 @@ sub ESPACE_EP_country_known {
 }
 
 sub ESPACE_EP_pdf {
+#	my ($self) = @_;
 	my ($self,$response) = @_;
 	my (   $url,       $request, $http_response, $base,
 		$zero_fill, $html,    $p,             $referer,
-		%bookmarks, $first,   $last
+		%bookmarks, $first,   $last, 
+#		$response 
 	);
 	if (!$self->{'patent'}{'country'}) {
 		$response->{'message'} =
@@ -79,8 +81,8 @@ sub ESPACE_EP_pdf {
 		$http_response = $self->request($request);
 		unless ( $http_response->is_success ) {
 			carp
-				"Request '$url' failed with status line '$http_response->status_line'.  Bummer.\n";
-			return (undef);
+				"Request '$url' failed with status line " . $http_response->status_line. ".  Bummer.\n";
+			return ($response);
 		}
 
 # <a href="#" target="_top" onClick="return changeSel(0)">
@@ -172,7 +174,7 @@ my $font = $pdf->corefont('Helvetica'); # Use Helvetica throughout
 			$http_response = $self->request($request);
 			if ( !$http_response->is_success ) {
 				carp
-					"Request '$url' failed with status line '$http_response->status_line'.  Bummer.\n";
+					"Request '$url' failed with status line ".$http_response->status_line.".  Bummer.\n";
 				return (undef);
 			}
 
@@ -254,7 +256,7 @@ my $font = $pdf->corefont('Helvetica'); # Use Helvetica throughout
 # in h331.html
 	unless ( $http_response->is_success ) {
 		carp
-			"Request '$url' failed with status line '$http_response->status_line'.  Bummer.\n";
+			"Request '$url' failed with status line " .$http_response->status_line. ".  " .$http_response->status_line. ".\n";
 		return (0);
 	}
 	$referer = $url;                      # use later on next request
@@ -309,7 +311,7 @@ my $font = $pdf->corefont('Helvetica'); # Use Helvetica throughout
 		or carp "trouble with request object of '$url'";
 	unless ( $http_response->is_success ) {
 		carp
-			"Request '$url' failed with status line '$http_response->status_line'.  Bummer.\n";
+			"Request '$url' failed with status line " .$http_response->status_line. ".  Bummer.\n";
 		return (0);
 	}
 	$request->referer($referer);

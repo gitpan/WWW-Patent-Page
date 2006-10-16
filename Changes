@@ -1,5 +1,7 @@
 Revision history for Perl module WWW::Patent::Page
 
+0.06 added MICROPATENT.pm to use that source: pdf, xml, html
+
 0.05 use PDF::API2 2.00  
 	USPTO changed their interface: H1,523 is out, H001,523 is in!  
 	    PP8,901 is out, PP08,901 is in!  
