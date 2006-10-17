@@ -20,6 +20,9 @@ $patent_document->{patent}->{office_password}= "YourPassword";
 
 #print join "\n" , @INC ; 
 
+SKIP: {
+	skip "No MicroPatent USERNAME and PASSWORD supplied", 7 unless ( ($patent_document->{patent}->{office_username} ne "YourUserName") || ($patent_document->{patent}->{office_password} ne "YourPassword") ) ;
+
 $patent_document->login() ;
 like ($patent_document->{'patent'}->{'session_token'}, qr/\d+/, "session id a number: '$patent_document->{'patent'}->{'session_token'}'");  # /
 like ($patent_document->{'patent'}{'session_token'}, qr/\d+/, "\$patent_document->{'patent'}{'session_token'} session id a number: '$patent_document->{'patent'}{'session_token'}");  # /
@@ -97,3 +100,5 @@ print "$r => $document1->{$r}\n";
 }
 
 like ( $document1->content, qr/Description/, 'pdf US4299215 has a bookmark to Description'  );  
+
+}

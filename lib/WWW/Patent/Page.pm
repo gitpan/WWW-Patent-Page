@@ -8,7 +8,7 @@ require LWP::UserAgent;
 use subs qw( new country_known get_page _load_modules _agent );
 our ( $VERSION, @ISA, %MODULES, %METHODS, %_country_known, $default_country );
 
-$VERSION = 0.06; @ISA = qw( LWP::UserAgent );
+$VERSION = 0.07; @ISA = qw( LWP::UserAgent );
 
 $default_country = 'US';
 
@@ -64,6 +64,7 @@ sub new {
 	}
 	$self->env_proxy()
 		; # get the proxy stuff set up from the environment via LWP::UserAgent
+	$self->timeout(240); # set to timeout to 240 seconds from the traditional 180 seconds
 	push( @{ $self->requests_redirectable }, 'POST' );    # redirect HTTP 1.1 302s  LWP::UserAgent
 	$self->agent = $class->_agent unless defined $self->agent;
 	$self->_load_modules(qw( USPTO ESPACE_EP MICROPATENT ))
