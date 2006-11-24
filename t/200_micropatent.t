@@ -6,7 +6,7 @@ use Carp;
 use warnings;
 use diagnostics;
 
-use Test::More tests => 9;
+use Test::More tests => 8;
 BEGIN { use_ok('WWW::Patent::Page'); }
 
 my $patent_document = WWW::Patent::Page->new();    # new object
@@ -17,12 +17,13 @@ isa_ok( $patent_document, 'WWW::Patent::Page' );
 $patent_document->{patent}->{office}= "MICROPATENT";
 $patent_document->{patent}->{office_username}= "YourUserName";
 $patent_document->{patent}->{office_password}= "YourPassword";
+#$patent_document->{patent}->{office_username}= "YourUserName";
+#$patent_document->{patent}->{office_password}= "YourPassword";
 
 #print join "\n" , @INC ; 
 
 SKIP: {
-	skip "No MicroPatent USERNAME and PASSWORD supplied", 7 unless ( ($patent_document->{patent}->{office_username} ne "YourUserName") || ($patent_document->{patent}->{office_password} ne "YourPassword") ) ;
-
+	skip "No MicroPatent USERNAME and PASSWORD supplied", 6 unless ( ($patent_document->{patent}->{office_username} ne "YourUserName") || ($patent_document->{patent}->{office_password} ne "YourPassword") ) ;
 $patent_document->login() ;
 like ($patent_document->{'patent'}->{'session_token'}, qr/\d+/, "session id a number: '$patent_document->{'patent'}->{'session_token'}'");  # /
 like ($patent_document->{'patent'}{'session_token'}, qr/\d+/, "\$patent_document->{'patent'}{'session_token'} session id a number: '$patent_document->{'patent'}{'session_token'}");  # /
@@ -48,7 +49,7 @@ my $document1 = $patent_document->get_page(
 
 like ( $document1->{'message'}, qr/login token not available/ , "no token, no session" ) ;  # /
 
-ok ( exists($document1->{'is_success'}) && !defined($document1->{'is_success'})  , 'status blank when login token not available' );
+# ok ( exists($document1->{'is_success'}) && !defined($document1->{'is_success'})  , 'status blank when login token not available' );
 
 $patent_document->{'patent'}->{'session_token'} = $session_id; # don't try this at home, kids
 
@@ -95,9 +96,9 @@ $document1 = $patent_document->get_page(
 # print join ("\n" , keys %$document1 ) ;
 
 
-for my $r (keys %$document1 ){
-print "$r => $document1->{$r}\n"; 
-}
+#for my $r (keys %$document1 ){
+#print "$r => $document1->{$r}\n"; 
+#}
 
 like ( $document1->content, qr/Description/, 'pdf US4299215 has a bookmark to Description'  );  
 

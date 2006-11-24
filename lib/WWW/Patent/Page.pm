@@ -8,7 +8,7 @@ require LWP::UserAgent;
 use subs qw( new country_known get_page _load_modules _agent );
 our ( $VERSION, @ISA, %MODULES, %METHODS, %_country_known, $default_country );
 
-$VERSION = 0.07; @ISA = qw( LWP::UserAgent );
+$VERSION = 0.09; @ISA = qw( LWP::UserAgent );
 
 $default_country = 'US';
 

@@ -16,7 +16,7 @@ use URI;
 #use PDF::API2 2.000;
 use WWW::Patent::Page::Response;
 our ( $VERSION, @ISA, %_country_known );
-$VERSION = "0.01";
+$VERSION = "0.03";
 
 sub methods {
 	return (
@@ -92,26 +92,26 @@ sub MICROPATENT_xml {
 	if ( !$self->{'patent'}{'country'} ) {
 		$self->{'message'}
 			= "country not specified (or doc_id has unrecognized country)";
-		$self->{'is_success'} = undef;
+		$self->{'is_success'} = 0;
 		return ($self);
 	}
 	if ( !&MICROPATENT_country_known( $self, $self->{'patent'}{'country'} ) )
 	{    #unrecognized country
 		$self->{'message'}
 			= "country '" . $self->{'patent'}{'country'} . "' unrecognized";
-		$self->{'is_success'} = undef;
+		$self->{'is_success'} = 0;
 		return ($self);
 	}
 #	print "\n3.1\n";
 	if ( !$self->{'patent'}{'session_token'} ) {
 		$self->{'message'}    = "login token not available";
-		$self->{'is_success'} = undef;
+		$self->{'is_success'} = 0;
 		return ($self);
 	}
 #	print "\n3.2\n";
 	if ( !$self->{'patent'}{'number'} ) {
 		$self->{'message'}    = "number '$self->{'patent'}{'number'}' bad";
-		$self->{'is_success'} = undef;
+		$self->{'is_success'} = 0;
 		return ($self);
 	}
 	my $number   = $self->{'patent'}{'number'};
@@ -152,7 +152,7 @@ sub MICROPATENT_xml {
 	} else {
 		$self->{'message'}
 			= "no match found e.g. match-1-0 value 12345678-0 , do not know how to continue \n$html\n no match found e.g. match-1-0 value 12345678-0 , do not know how to continue";
-		$self->{'is_success'} = undef;
+		$self->{'is_success'} = 0;
 		return ($self);
 	}
 # print "\n3.5\n";
@@ -165,7 +165,7 @@ sub MICROPATENT_xml {
 	} else {
 		$self->{'message'}
 			= "no screenseq found, do not know how to continue \n$html\nno screenseq found, do not know how to continue";
-		$self->{'is_success'} = undef;
+		$self->{'is_success'} = 0;
 		return ($self);
 	}
 # print "\n4\n";
@@ -188,6 +188,19 @@ sub MICROPATENT_xml {
 			. ".  Bummer.\n";
 		return ($http_response);
 	}
+
+
+while ($http_response->content !~ m { (http://www.micropat.com:80/get-file/\d+/)  }xms ) {
+my @forms = HTML::Form->parse( $http_response );
+$http_response=$self->request($forms[0]->click); 
+unless ($http_response->is_success) {
+	carp "Form ". $forms[0]->dump . " is problematic.\n"; 		
+	$self->{'message'} = "form  " . $forms[0]->dump . " is problematic.\n" ;
+	$self->{'is_success'} = 0;		
+   	return ($self);
+   	} 
+}
+
 		
 #	print $http_response->content;
 
@@ -199,7 +212,7 @@ $html = $http_response->content;
 	} else {
 		$self->{'message'}
 			= "no url to xml found, do not know how to continue \n$html\nno screenseq found, do not know how to continue";
-		$self->{'is_success'} = undef;
+		$self->{'is_success'} = 0;
 		return ($self);
 	}
 	$request = GET "$url" ;
@@ -224,26 +237,26 @@ sub MICROPATENT_pdf {
 	if ( !$self->{'patent'}{'country'} ) {
 		$self->{'message'}
 			= "country not specified (or doc_id has unrecognized country)";
-		$self->{'is_success'} = undef;
+		$self->{'is_success'} = 0;
 		return ($self);
 	}
 	if ( !&MICROPATENT_country_known( $self, $self->{'patent'}{'country'} ) )
 	{    #unrecognized country
 		$self->{'message'}
 			= "country '" . $self->{'patent'}{'country'} . "' unrecognized";
-		$self->{'is_success'} = undef;
+		$self->{'is_success'} = 0;
 		return ($self);
 	}
 #	print "\n3.1\n";
 	if ( !$self->{'patent'}{'session_token'} ) {
 		$self->{'message'}    = "login token not available";
-		$self->{'is_success'} = undef;
+		$self->{'is_success'} = 0;
 		return ($self);
 	}
 #	print "\n3.2\n";
 	if ( !$self->{'patent'}{'number'} ) {
 		$self->{'message'}    = "number '$self->{'patent'}{'number'}' bad";
-		$self->{'is_success'} = undef;
+		$self->{'is_success'} = 0;
 		return ($self);
 	}
 	my $number   = $self->{'patent'}{'number'};
@@ -284,7 +297,7 @@ sub MICROPATENT_pdf {
 	} else {
 		$self->{'message'}
 			= "no match found e.g. match-1-0 value 12345678-0 , do not know how to continue \n$html\n no match found e.g. match-1-0 value 12345678-0 , do not know how to continue";
-		$self->{'is_success'} = undef;
+		$self->{'is_success'} = 0;
 		return ($self);
 	}
 # print "\n3.5\n";
@@ -297,7 +310,7 @@ sub MICROPATENT_pdf {
 	} else {
 		$self->{'message'}
 			= "no screenseq found, do not know how to continue \n$html\nno screenseq found, do not know how to continue";
-		$self->{'is_success'} = undef;
+		$self->{'is_success'} = 0;
 		return ($self);
 	}
 # print "\n4\n";
@@ -312,7 +325,7 @@ sub MICROPATENT_pdf {
 		'match-1-0'         => "$match",
 		];
 	$http_response = $self->request($request);
-print "\n5\n";
+#print "\n5\n";
 	
 	unless ( $http_response->is_success ) {
 		carp "Request 'POST http://www.micropat.com/perl/sunduk/order-submit.pl' failed with status line "
@@ -324,7 +337,7 @@ print "\n5\n";
 #	print $http_response->content;
 
 $html = $http_response->content;	
-print "\n5- here it is:\n$html\n";
+#print "\n5- here it is:\n$html\n";
 	if ($html =~ m{ (http://www.micropat.com:80/get-file/\d+/[^\.]+\.pdf)  }xms
 		)
 	{
@@ -332,7 +345,7 @@ print "\n5- here it is:\n$html\n";
 	} else {
 		$self->{'message'}
 			= "no url to PDF found, do not know how to continue \n$html\nno screenseq found, do not know how to continue";
-		$self->{'is_success'} = undef;
+		$self->{'is_success'} = 0;
 		return ($self);
 	}
 	$request = GET "$url" ;
@@ -342,7 +355,8 @@ print "\n5- here it is:\n$html\n";
 			. $http_response->status_line
 			. ".  Bummer.\n";
 		return ($http_response);
-	}	
+	}
+	$http_response->{'is_success'} = 'pdf successfully retrieved' ;	
 	return ($http_response);	
  }
 sub MICROPATENT_html {
@@ -357,26 +371,26 @@ sub MICROPATENT_html {
 	if ( !$self->{'patent'}{'country'} ) {
 		$self->{'message'}
 			= "country not specified (or doc_id has unrecognized country)";
-		$self->{'is_success'} = undef;
+		$self->{'is_success'} = 0;
 		return ($self);
 	}
 	if ( !&MICROPATENT_country_known( $self, $self->{'patent'}{'country'} ) )
 	{    #unrecognized country
 		$self->{'message'}
 			= "country '" . $self->{'patent'}{'country'} . "' unrecognized";
-		$self->{'is_success'} = undef;
+		$self->{'is_success'} = 0;
 		return ($self);
 	}
 #	print "\n3.1\n";
 	if ( !$self->{'patent'}{'session_token'} ) {
 		$self->{'message'}    = "login token not available";
-		$self->{'is_success'} = undef;
+		$self->{'is_success'} = 0;
 		return ($self);
 	}
 	# print "\n3.2\n";
 	if ( !$self->{'patent'}{'number'} ) {
 		$self->{'message'}    = "number '$self->{'patent'}{'number'}' bad";
-		$self->{'is_success'} = undef;
+		$self->{'is_success'} = 0;
 		return ($self);
 	}
 	my $number   = $self->{'patent'}{'number'};
@@ -417,7 +431,7 @@ sub MICROPATENT_html {
 	} else {
 		$self->{'message'}
 			= "no match found e.g. match-1-0 value 12345678-0 , do not know how to continue \n$html\n no match found e.g. match-1-0 value 12345678-0 , do not know how to continue";
-		$self->{'is_success'} = undef;
+		$self->{'is_success'} = 0;
 		return ($self);
 	}
  # print "\n3.5\n";
@@ -430,7 +444,7 @@ sub MICROPATENT_html {
 	} else {
 		$self->{'message'}
 			= "no screenseq found, do not know how to continue \n$html\nno screenseq found, do not know how to continue";
-		$self->{'is_success'} = undef;
+		$self->{'is_success'} = 0;
 		return ($self);
 	}
  # print "\n4\n";
@@ -444,6 +458,13 @@ sub MICROPATENT_html {
 		'del_CAPS_standard' => "DOWNLOADHTML",
 		'match-1-0'         => "$match",
 		];
+
+#<form method="GET" action="order-detail.pl">    
+#<input type="hidden" name="orderid" value="3784175"/>    
+#<input type="hidden" name="ticket" value="100228090378"/>     
+#<input type="submit" value="Click Here for Current Status of Order">   
+#</form>  This will take you to response also, like a reload while waiting for availability
+
 	$http_response = $self->request($request);
  # print "\n5\n";
 	
@@ -451,14 +472,44 @@ sub MICROPATENT_html {
 		carp "Request 'POST http://www.micropat.com/perl/sunduk/order-submit.pl' failed with status line "
 			. $http_response->status_line
 			. ".  Bummer.\n";
-		return ($http_response);
+		$self->{'message'}
+			= "no DOWNLOADHTML found, do not know how to continue \n$html\nno screenseq found, do not know how to continue";
+		$self->{'is_success'} = 0;		
+		return ($self);
 	}
+
+while ($http_response->content !~ m { (http://www.micropat.com:80/get-file/\d+/)  }xms ) {
+my @forms = HTML::Form->parse( $http_response );
+$http_response=$self->request($forms[0]->click); 
+unless ($http_response->is_success) {
+	carp "Form ". $forms[0]->dump . " is problematic.\n"; 		
+	$self->{'message'} = "form  " . $forms[0]->dump . " is problematic.\n" ;
+	$self->{'is_success'} = 0;		
+   	return ($self);
+   	} 
+}
+
+
+while ($http_response->content !~ m { (http://www.micropat.com:80/get-file/\d+/)  }xms ) {
+my @forms = HTML::Form->parse( $http_response );
+$http_response=$self->request($forms[0]->click); 
+unless ($http_response->is_success) {
+	carp "Form ". $forms[0]->dump . " is problematic.\n"; 		
+	$self->{'message'} = "form  " . $forms[0]->dump . " is problematic.\n" ;
+	$self->{'is_success'} = 0;		
+   	return ($self);
+   	} 
+}
+
 		
 #	print $http_response->content;
 
 $html = $http_response->content;	
 
+
+
  # print "\n$html\n";
+# <a href="http://www.micropat.com:80/get-file/22132829537294079818300522876599/US4288215(A).html">US4288215(A).html
 
 	if ($html =~ m{ (http://www.micropat.com:80/get-file/\d+/[^\.]+\.html)  }xms
 		)
@@ -467,7 +518,7 @@ $html = $http_response->content;
 	} else {
 		$self->{'message'}
 			= "no url to html found, do not know how to continue \n$html\nno screenseq found, do not know how to continue";
-		$self->{'is_success'} = undef;
+		$self->{'is_success'} = 0;
 		return ($http_response);
 	}
 	$request = GET "$url" ;
