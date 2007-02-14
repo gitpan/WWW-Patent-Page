@@ -18,7 +18,7 @@ use File::Temp 0.16 ;
 
 use vars qw/ $VERSION @ISA/;
 
-$VERSION = "0.24";
+$VERSION = "0.25";
 
 sub methods {
 	return (
@@ -32,6 +32,23 @@ sub methods {
 
 }
 
+#  sub USPTO_parse_doc_id{
+#  "All patent numbers must be 7 characters in length"
+#     well, maybe 7 or less...
+#  USPTO will give 692,301 for request of 692301 or 0692301
+#  Will respond to PN/D339456 (but not PN/D0339456)
+#                  PN/D039456
+#              and PN/D39456  and 1 and 01
+#  Utility --          5,146,634 6923014 0000001
+#  Design --        D339,456 D321987 D000152
+#  Plant --        PP08,901 PP07514 PP00003
+#  Reissue --        RE35,312 RE12345 RE00007
+#  Defensive Publication --        T109,201 T855019 T100001
+#  Statutory Invention Registration --        H001,523 H001234 H000001
+#  Re-examination --        RX29,194 RE29183 RE00125
+#  Additional Improvement --        AI00,002 AI000318 AI00007
+#  }
+
 sub USPTO_country_known {
 	my $self = shift @_;
 	my $country = shift;
@@ -42,7 +59,7 @@ sub USPTO_htm {
 	my ($self,$page_response) = @_;
 	my $request;
 	my $request_text;
-	if (   ( !$self->{'patent'}->{'type'} )
+	if (   ( !$self->{'patent'}->{'doc_type'} )
 		&& ( length( $self->{'patent'}{'number'} ) == 11 ) )
 	{
 
@@ -69,14 +86,14 @@ sub USPTO_htm {
 	}
 
 #http://appft1.uspto.gov/netacgi/nph-Parser?Sect1=PTO1&Sect2=HITOFF&d=PG01&p=1&u=%2Fnetahtml%2FPTO%2Fsrchnum.html&r=1&f=G&l=50&s1=%2220010000044%22.PGNR.&OS=DN/20010000044&RS=DN/20010000044
-	elsif ( $self->{'patent'}->{'type'} ) {
+	elsif ( $self->{'patent'}->{'doc_type'} ) {
 
 		# Non-Utility Patent
 		$request_text =
-			"http://patft.uspto.gov/netacgi/nph-Parser?patentnumber=$self->{'patent'}->{'type'}$self->{'patent'}{'number'}";
+			"http://patft.uspto.gov/netacgi/nph-Parser?patentnumber=$self->{'patent'}->{'doc_type'}$self->{'patent'}{'number'}";
 		$request = HTTP::Request->new( 'GET' => $request_text );
 	}
-	else {    
+	else {
 		      #Standard Utility Patent
 		$request_text =
 			"http://patft.uspto.gov/netacgi/nph-Parser?patentnumber=$self->{'patent'}{'number'}";
@@ -106,13 +123,13 @@ sub USPTO_htm {
 			$response = $self->request($request);
 			$html     = $response->content;
 		}
-		
+
 		if ($html =~ m/No patents have matched your query/) {
 			$page_response->set_parameter( 'is_success', undef );
 			$page_response->set_parameter( 'message','No patents have matched your query' );  # No patents have matched your query
-			return $page_response;			
+			return $page_response;
 		}
-		
+
 		unless ( $html =~
 			s/.*?<html>.*?<head>/<html>\n<head><!-- Modified by perl module WWW::Patent::Page from information provided by http:\/\/www.uspto.gov ; dedicated to public ; use at own risk -->\n<title>US /is
 			)
@@ -129,7 +146,7 @@ sub USPTO_htm {
 			carp "header weird C \n$html\n";
 		}
 
-		#warn " type is $self->{'patent'}->{'type'}'\n";
+		#warn " type is $self->{'patent'}->{'doc_type'}'\n";
 		unless ( $html =~ s/<body.*?<hr>/<body><HR>/is ) {
 			carp "front weird  \n$html\n";
 		}
@@ -190,10 +207,10 @@ sub USPTO_tif {
 	else { $base = 'patimg2.uspto.gov'; }
 	my $zerofill = sprintf '%0.8u', $self->{'patent'}{'number'};
 	# print "\nZerofill: $zerofill\n";
-	if ( $self->{'patent'}->{'type'} ) {
+	if ( $self->{'patent'}->{'doc_type'} ) {
 		$request =
 			HTTP::Request->new( 'GET' =>
-				"http://$base/.piw?Docid=$self->{'patent'}->{'type'}$zerofill\&idkey=NONE"
+				"http://$base/.piw?Docid=$self->{'patent'}->{'doc_type'}$zerofill\&idkey=NONE"
 			);
 	}
 	else {
@@ -253,7 +270,7 @@ FINDPAGE: while ( $token = $p->get_tag("a") ) {
  FINDPAGE: while ($token = $p->get_tag("embed") ){
 	$url = $token->[1]->{src} || "-";
 	if ($url =~ m/image\/tiff/) {last FINDPAGE; }
-	}	
+	}
 
 # get tiff image
 	$url = "http://$base$url";
@@ -262,7 +279,7 @@ FINDPAGE: while ( $token = $p->get_tag("a") ) {
 	$response = $self->request($request);
 	# print "\nPage response\n$response->content\n\n";
 	$page_response->set_parameter( 'content', $response->content );
-	
+
 	return $page_response;
 }
 
@@ -342,10 +359,10 @@ sub USPTO_pdf {
 	else { $base = 'patimg2.uspto.gov'; }
 	my $zerofill = sprintf '%0.8u', $self->{'patent'}{'number'};
 	# print "\nZerofill: $zerofill\n";
-	if ( $self->{'patent'}->{'type'} ) {
+	if ( $self->{'patent'}->{'doc_type'} ) {
 		$request =
 			HTTP::Request->new( 'GET' =>
-				"http://$base/.piw?Docid=$self->{'patent'}->{'type'}$zerofill\&idkey=NONE"
+				"http://$base/.piw?Docid=$self->{'patent'}->{'doc_type'}$zerofill\&idkey=NONE"
 			);
 	}
 	else {
@@ -403,20 +420,20 @@ FINDPAGE: while ( $token = $p->get_tag("a") ) {
  FINDTIF: while ($token = $p->get_tag("embed") ){
 	$url = $token->[1]->{src} || "-";
 	if ($url =~ m/image\/tiff/) {last FINDTIF; }
-	}	
+	}
 # get tiff image
 	$url = "http://$base$url";
 	my $tif_url = $url;
 	$request = new HTTP::Request( 'GET' => "$url" )
 		or carp "Coudn't retrieve the tiff image fetch $url";
 	$response = $self->request($request);
-	
+
 # store tif image
 	my $pat_page = 1;
 	if (defined($self->{'patent'}{'page'})){$pat_page =  $self->{'patent'}{'page'};}
-	
+
 #	print "\n\$self->{'patent'}->{'doc_id'} = '$self->{'patent'}->{'doc_id'}' \@ 413 \n";
-		
+
 	$fn_template = $self->{'patent'}->{'doc_id'}."_p".$pat_page."_XXXX";
 	my $temp_tif = new File::Temp(	TEMPLATE => $fn_template,
 					DIR => $tempdir,
@@ -476,67 +493,67 @@ sub USPTO_terms {
 	return (
 		"WWW::Patent::Page utilizes the USPTO web site.\n
 Refer to http://www.USPTO.gov for terms and conditions of use of that site.
-	
-Note that as of September 1, 2004, 
+
+Note that as of September 1, 2004,
 http://www.uspto.gov/patft/help/notices.htm and the like state in part:
 
-These databases are intended for use by the general public. 
-Due to limitations of equipment and bandwidth, they are not 
-intended to be a source for bulk downloads of USPTO data. 
-Bulk data may be purchased from USPTO at cost (see the USPTO 
-Products and Services Catalog). Individuals, companies, 
-IP addresses, or blocks of IP addresses who, in effect, 
-deny service to the general public by generating unusually 
-high numbers (1000 or more) of daily database accesses 
-(searches, pages, or hits), whether generated manually or 
-in an automated fashion, may be denied access to these 
+These databases are intended for use by the general public.
+Due to limitations of equipment and bandwidth, they are not
+intended to be a source for bulk downloads of USPTO data.
+Bulk data may be purchased from USPTO at cost (see the USPTO
+Products and Services Catalog). Individuals, companies,
+IP addresses, or blocks of IP addresses who, in effect,
+deny service to the general public by generating unusually
+high numbers (1000 or more) of daily database accesses
+(searches, pages, or hits), whether generated manually or
+in an automated fashion, may be denied access to these
 servers without notice.
 
 Note at http://www.uspto.gov/patft/help/accpat.htm :
 
-If you can access the main PTO Web site, but cannot access any 
-of the Patent Grant Database Quick Search, Advanced Quick Searching, 
-or Patent Number Searching pages, your workstation or organization 
-may have been denied access to the Web Patent Databases pursuant 
-to the policy stated at the top of this page. To determine if you 
-have been denied access, you can check the Denied List for your 
+If you can access the main PTO Web site, but cannot access any
+of the Patent Grant Database Quick Search, Advanced Quick Searching,
+or Patent Number Searching pages, your workstation or organization
+may have been denied access to the Web Patent Databases pursuant
+to the policy stated at the top of this page. To determine if you
+have been denied access, you can check the Denied List for your
 computer's IP address. http://www.uspto.gov/patft/help/denied.htm
 
-(Your IP address is the only means by which you are known to the 
-PTO servers -- server logs do not contain your email address or 
-any other personal identifying information. If you do not know 
-your computer's IP address because you are behind a firewall, do 
-not have a fixed IP address, or for any other reason, you can find 
-your current IP address by using an 'IP reflector,' such as 
+(Your IP address is the only means by which you are known to the
+PTO servers -- server logs do not contain your email address or
+any other personal identifying information. If you do not know
+your computer's IP address because you are behind a firewall, do
+not have a fixed IP address, or for any other reason, you can find
+your current IP address by using an 'IP reflector,' such as
 http://www2.simflex.com/ip.shtml or http://www.dslreports.com/ip.)
 
-If you are an individual whose individual IP address has been 
-denied access: to seek to have your access restored, please send 
-email including your workstation and firewall or gateway IP addresses 
-(consult with your network administrators if necessary), and describing 
-the steps you have taken or will take to insure that future violations 
-of the USPTO access policy will not occur, to the Database Help Desk at 
+If you are an individual whose individual IP address has been
+denied access: to seek to have your access restored, please send
+email including your workstation and firewall or gateway IP addresses
+(consult with your network administrators if necessary), and describing
+the steps you have taken or will take to insure that future violations
+of the USPTO access policy will not occur, to the Database Help Desk at
 www\@uspto.gov.
 
-If you are a member or employee of an organization which has been 
-denied access: please do not send individual email to PTO. Instead, 
-please have your network administrator or a person holding authority 
-over your organization\'s network operations send email including your 
-firewall, gateway, or workstation IP addresses, and describing the steps 
-you have taken or will take to insure that future violations of the USPTO 
+If you are a member or employee of an organization which has been
+denied access: please do not send individual email to PTO. Instead,
+please have your network administrator or a person holding authority
+over your organization\'s network operations send email including your
+firewall, gateway, or workstation IP addresses, and describing the steps
+you have taken or will take to insure that future violations of the USPTO
 access policy will not occur, to the Database Help Desk at www\@uspto.gov.
 
-For all other content-related matters, please send email to the Database 
+For all other content-related matters, please send email to the Database
 Help Desk at www\@uspto.gov
 
 Note at http://www.uspto.gov/patft/help/images.htm
 
-Patent images must  be retrieved from the database one page at a time. 
-This is necessary since patents can be as long as 5,000 pages, and the 
-resources required to allow downloading such 'jumbo' patents are not 
-available. Users employing third-party software which downloads multiple 
-pages of a patent at once may find this practice subjects them to denial 
-of access to the databases if they exceed PTO's maximum allowable 
+Patent images must  be retrieved from the database one page at a time.
+This is necessary since patents can be as long as 5,000 pages, and the
+resources required to allow downloading such 'jumbo' patents are not
+available. Users employing third-party software which downloads multiple
+pages of a patent at once may find this practice subjects them to denial
+of access to the databases if they exceed PTO's maximum allowable
 activity levels.
 
 "
@@ -549,12 +566,12 @@ __END__
 =head1 WWW::Patent::Page::USPTO
 
 support the use of the United States Patent and Trademark Office web site
-	
+
 =cut
 
 =head2 methods
 
-set up the methods available for each document type 
+set up the methods available for each document type
 
 =cut
 

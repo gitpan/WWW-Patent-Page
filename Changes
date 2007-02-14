@@ -1,8 +1,24 @@
 Revision history for Perl module WWW::Patent::Page and its submodules
 
-0.09 (beginning Nov 14) tried to account for Micropatent javascript that refreshes document delivery page until document is delivered.  
+0.100.0 finished Feb 2007
+	-three part release number requires installing "version.pm" distribution (sorry about that...)
+	-rewrote the parser of "patent numbers"- method 'parse_doc_id'
+	-changed some tests to be consistent with parser, which now leaves the doc_id alone and parses into separate values like country, kind, type
+	-added further testing of patent number parser
+	-added Perl::Critic testing (with some exclusions, and only used when you are me )
+	-added test of network accessibility (basically for firewalls)
+	-got rid of some warnings that wrote over testing
+	-made pod testing conditional on being me- so others will not need to add modules for testing
+	-added many two-letter country codes
+
+	TODO -  use HTTP::Response, better use of "is_success" and "message", more tests
+	 Longer range:  Add modules for machine translations from Japan and Korea
+	 timing of patent retrieval from various offices
+	 test coverage
+
+0.09 (beginning Nov 14) tried to account for Micropatent javascript that refreshes document delivery page until document is delivered.
     Did not add a test for this condition, as the condition (slowness) depends on MicroPatent website.
-	Accounted for it by repeatedly clicking the "Click Here for Current Status of Order" form, assumed to be the first form on the page. 
+	Accounted for it by repeatedly clicking the "Click Here for Current Status of Order" form, assumed to be the first form on the page.
 
 0.08 removed extraneous print statements
 
@@ -11,10 +27,10 @@ Revision history for Perl module WWW::Patent::Page and its submodules
 
 0.06 added MICROPATENT.pm to use that source: pdf, xml, html
 
-0.05 use PDF::API2 2.00  
-	USPTO changed their interface: H1,523 is out, H001,523 is in!  
-	    PP8,901 is out, PP08,901 is in!  
-	
+0.05 use PDF::API2 2.00
+	USPTO changed their interface: H1,523 is out, H001,523 is in!
+	    PP8,901 is out, PP08,901 is in!
+
 USPTO: All patent numbers must be seven characters in length, excluding commas, which are optional. Examples:
 Utility -- 	5,146,634 6923014 0000001
 Design -- 	D339,456 D321987 D000152
@@ -29,7 +45,7 @@ Additional Improvement -- 	AI00,002 AI000318 AI00007
      uses File::Temp for save handling of temporary files
      added tempdir to specify working directory
      Thanks to H. Schier h.schier@fkf.mpg.de
-     
+
      Added Test::Pod to pass Pod for Kwalitee- Wanda
 
 0.03 Major Changes:

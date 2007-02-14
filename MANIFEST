@@ -11,12 +11,17 @@ lib/WWW/Patent/Page/ESPACE_EP.pm
 lib/WWW/Patent/Page/MICROPATENT.pm
 examples/get_patent.pl
 examples/www_get_patent_pdf.pl
+examples/regex_parser_test.pl
 t/001_load.t
 t/014_pod.t
 t/015_pod_coverage.t
+t/020_network.t
+t/035_defaults.t
+t/040_parse_doc_id.t
 t/050_espace_ep.t
 t/100_uspto.t
 t/105_uspto_pdf.t
 t/200_micropatent.t
+t/999_critic.t
 Build.PL
 Makefile.PL

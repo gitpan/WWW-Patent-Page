@@ -1,5 +1,4 @@
 pod2text WWW::Patent::Page.pm > README
-
 perldoc -t WWW::Patent::Page > README
 
 NAME
@@ -7,12 +6,6 @@ NAME
     from selected source (e.g. from United States Patent and Trademark
     Office (USPTO) website or the European Patent Office (ESPACE_EP). and
     place into a WWW::Patent::Page::Response object)
-    
-TESTING
-
-    Install prerequisites before testing.  Testing will fail without prerequisites. 
-    Do not report failures to CPAN TESTERs without installing prerequisites.
-    Edit 200_micropatent.t with your username and password before testing.
 
 SYNOPSIS
     Please see the test suite for working examples. The following is not
@@ -20,37 +13,37 @@ SYNOPSIS
 
       $ perl -I. -MWWW::Patent::Page -e 'print $WWW::Patent::Page::VERSION,"\n"'
       0.02
-  
-      $ perl get_patent.pl US6123456 > US6123456.pdf &  
-  
+
+      $ perl get_patent.pl US6123456 > US6123456.pdf &
+
       (command line interface is included in examples)
-  
-      http://www.yourdomain.com/www_get_patent_pdf.pl    
-  
+
+      http://www.yourdomain.com/www_get_patent_pdf.pl
+
       (web fetcher is included in examples)
 
       use WWW::Patent::Page;
-  
+
       print $WWW::Patent::Page::VERSION,"\n";
 
       my $patent_browser = WWW::Patent::Page->new(); # new object
-  
+
       my $document1 = $patent_document->get_page('6,123,456');
-            # defaults:     
+            # defaults:
             #       office  => 'ESPACE_EP',
             #           country => 'US',
             #           format      => 'pdf',
-            #               page    => undef ,  
+            #               page    => undef ,
             # and usual defaults of LWP::UserAgent (subclassed)
 
-      my $document2 = $patent_document->get_page('US6123456', 
+      my $document2 = $patent_document->get_page('US6123456',
                             office  => 'ESPACE_EP' ,
                             format  => 'pdf',
                             page    => 2 ,  #get only the second page
                             );
 
       my $pages_known = $document2->get_parameter('pages');  #how many total pages known?
-                                                
+
 DESCRIPTION
       Intent:  Use public sources to retrieve patent documents such as
       TIFF images of patent pages, html of patents, pdf, xml, etc.
@@ -59,12 +52,12 @@ DESCRIPTION
 
 USAGE
       See also SYNOPSIS above
-      
-    Install prerequisites before testing.  Testing will fail without prerequisites. 
+
+    Install prerequisites before testing.  Testing will fail without prerequisites.
     Do not report failures to CPAN TESTERs without installing prerequisites.
     Edit 200_micropatent.t with your username and password before testing.
 
-  
+
          Standard process for building & installing modules:
 
               perl Build.PL
@@ -72,18 +65,25 @@ USAGE
               ./Build test
               ./Build install
 
+              or
+
+              perl Makefile.PL
+              make
+              make test TEST_VERBOSE=1
+              make install
+
     Examples of use:
 
       $patent_browser = WWW::Patent::Page->new(
                             doc_id  => 'US6,654,321',
                             office  => 'ESPACE_EP' ,
                             format  => 'pdf',
-                            page    => undef ,  # returns all pages in one pdf 
+                            page    => undef ,  # returns all pages in one pdf
                             agent   => 'Mozilla/5.0 (Windows; U; Windows NT 5.0; en-US; rv:1.4b) Gecko/20030516 Mozilla Firebird/0.6',
                             );
-        
+
             $patent_response = $patent_browser->get_patent('US6,654,321(B2)issued_2_Okada');
-        
+
 BUGS
     Pre-alpha release, to gauge whether the perl community has any interest.
 
@@ -97,13 +97,12 @@ BUGS
     in method provide_doc
 
 SUPPORT
-    Yes, please. Checks are best. Or email me at Wanda_B_Anon@yahoo.com to
-    arrange fund transfers.
+    Email me at Wanda_B_Anon@yahoo.com
 
 AUTHOR
             Wanda B. Anon
             Wanda_B_Anon@yahoo.com
-        
+
 COPYRIGHT
     This program is free software; you can redistribute it and/or modify it
     under the same terms as Perl itself.
@@ -112,11 +111,9 @@ COPYRIGHT
     with this module.
 
 ACKNOWLEDGEMENTS
-    You, the user (including those already suggesting improvements), Andy
-    Lester, the authors of Finance::Quote, Erik Oliver for patentmailer,
+    Andy Lester, the authors of Finance::Quote, Erik Oliver for patentmailer,
     Howard P. Katseff of AT&T Laboratories for wsp.pl, version 2, a proxy
-    that speaks LWP and understands proxies, and of course Larry and Randal
-    and the gang.
+    that speaks LWP and understands proxies.
 
 SEE ALSO
     perl(1).
@@ -135,7 +132,7 @@ Subroutines
     country/entity, kind, number, type, ...
 
          CC[TY]##,###,###(V#)Comments
-     
+
          CC : Two letter country/entity code; e.g. US, EP, WO
          TY  : Type of document; one or two letters only of these choices:
                     e.g. in US, Kind = Utility is default and no "Kind" is used, e.g. US6123456
@@ -146,7 +143,7 @@ Subroutines
                     SIR: Statutory Invention Registration, e.g. USH1,523
           V# : the version number, e.g. A1, B2, etc.; placed in parenthesis
           Comments:  retained but not used- single string of word characters \w = A-z0-9_ (no spaces, "-", commas, etc.)
-                
+
   get_page
     method to use the modules specific to Offices like USPTO, with methods
     for each document/page format, etc., and LWP::Agent to grab the

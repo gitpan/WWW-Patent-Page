@@ -12,7 +12,7 @@ if ( param() ) {
 	my $agent = WWW::Patent::Page->new();
 	my $doc_id = param('doc_id');
 	$doc_id =~ s/[^A-Za-z0-9]//g;  # that which is not allowed is forbidden
-	my response = $agent->get_page($doc_id);
+	my $response = $agent->get_page($doc_id);
 	print $response->content;
 }
 

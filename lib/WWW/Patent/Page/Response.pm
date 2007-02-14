@@ -16,6 +16,8 @@ sub new    #_HTTP_Response
 	my ( $class, %patent_parameters_passed ) = @_;
 	my $self = {
 		'doc_id'     => undef,
+        'doc_id_standardized' => undef,              # US6123456    sparse
+		'doc_id_commified'    => undef,              # US6,123,456
 		'is_success' => undef,
 		'content'    => undef,
 		'message'    => undef,
@@ -25,7 +27,7 @@ sub new    #_HTTP_Response
 		'office_password' => undef,
 		'session_token' => undef,
 		'country'    => undef,
-		'type'       => undef,
+		'doc_type'       => undef,
 		'number'     => undef,
 		'kind'		=> undef,
 		'pages'      => undef,
@@ -33,6 +35,7 @@ sub new    #_HTTP_Response
 		'version'    => undef,
 		'comment'    => undef,
 		'tempdir'    => undef,
+
 	};
 	for my $key ( keys %patent_parameters_passed ) {
 		if ( exists $self->{$key} ) {
@@ -40,7 +43,7 @@ sub new    #_HTTP_Response
 		}
 		else {
 			carp "parameter '$key' not recognized-",
-				" value '$patent_parameters_passed{$key}'";    
+				" value '$patent_parameters_passed{$key}'";
 		}
 	}
 	bless $self, $class;
@@ -78,10 +81,10 @@ __END__
 
 =head1 NAME
 
-WWW::Patent::Page::Response 
+WWW::Patent::Page::Response
 
-object holding a patent page or document (e.g. htm, pdf, tif) 
-from selected source (e.g. from United States Patent and Trademark Office 
+object holding a patent page or document (e.g. htm, pdf, tif)
+from selected source (e.g. from United States Patent and Trademark Office
 (USPTO) website or the European Patent Office (ESPACE_EP), as constructed by WWW::Patent::Page,
 in passing analogy to LWP::UserAgent and HTTP::Response
 
@@ -94,20 +97,20 @@ Please see the test suite for working examples.  The following is not guaranteed
   0.02
 
   use WWW::Patent::Page;
-  
+
   print $WWW::Patent::Page::VERSION,"\n";
 
   my $patent_browser = WWW::Patent::Page->new(); # new object
-  
+
   my $document1 = $patent_document->get('6,123,456');
-  	# defaults:  	
+  	# defaults:
   	#       office 	=> 'ESPACE_EP',
 	# 	    country => 'US',
 	#	    format 	=> 'pdf',
-	#		page   	=> 'all',  
+	#		page   	=> 'all',
 	# and usual defaults of LWP::UserAgent (subclassed)
 
-  my $document2 = $patent_document->provide_doc('US6123456', 
+  my $document2 = $patent_document->provide_doc('US6123456',
   			office 	=> 'ESPACE_EP' ,
 			format 	=> 'pdf',
 			page   	=> 2 ,
@@ -116,17 +119,17 @@ Please see the test suite for working examples.  The following is not guaranteed
   my $pages_known = $patent_document->pages_available(  # e.g. TIFF
   			document=> '6123456',
 			);
-						
+
 =head1 DESCRIPTION
 
   Intent:  Use public sources to retrieve patent documents such as
   TIFF images of patent pages, html of patents, pdf, etc.
   Expandable for your office of interest by writing new submodules..
- 
+
 =head1 USAGE
 
   See also SYNOPSIS above
-  
+
      Standard process for building & installing modules:
 
           perl Build.PL
@@ -143,12 +146,12 @@ Examples of use:
 			page   	=> 'all' ,
 			agent   => 'Mozilla/5.0 (Windows; U; Windows NT 5.0; en-US; rv:1.4b) Gecko/20030516 Mozilla Firebird/0.6',
 			);
-	
+
 	$patent_response = $patent_browser->get('US6,654,321(B2)issued_2_Okada');
-	
-	
-  
- 
+
+
+
+
 =head1 BUGS
 
 Pre-alpha release, to gauge whether the perl community has any interest.
@@ -170,7 +173,7 @@ Email me at Wanda_B_Anon@yahoo.com with example scripts to dissect.
 
 	Wanda B. Anon
 	Wanda_B_Anon@yahoo.com
-	
+
 =head1 COPYRIGHT
 
 This program is free software; you can redistribute
@@ -191,8 +194,8 @@ perl(1).
 
 =head2 new
 
-Construct an empty object with 
-appropriate variables as the keys referring to the 
+Construct an empty object with
+appropriate variables as the keys referring to the
 content retrieved by Page with its UserAgent helper.
 
 =head2 get_parameter
@@ -215,6 +218,6 @@ not failed
 
 =head2 content
 
-provides the content (pdf, htm, etc.) when available 
+provides the content (pdf, htm, etc.) when available
 
 =cut

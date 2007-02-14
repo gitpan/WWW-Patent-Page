@@ -5,12 +5,13 @@ use strict;
 
 use Test::More tests => 34;    # perlobj
 
+$| = 1;
 BEGIN { use_ok('WWW::Patent::Page'); }
 
 my $browser = WWW::Patent::Page->new();    # new object
 isa_ok( $browser, 'WWW::Patent::Page', 'WWW::Patent::Page->new() works, ' );
 
-cmp_ok( $WWW::Patent::Page::VERSION, '>=', 0.02, "VERSION is 0.02 or above" );
+cmp_ok( $WWW::Patent::Page::VERSION, '>=', 0.1, "VERSION is 0.1 or above" );
 
 like( $browser->agent, qr/^WWW::Patent::Page/,
 	'WWW::Patent::Page is agent default prefix' );
@@ -27,9 +28,9 @@ is( $browser->country_known('US'),
 is( $browser->country_known('YY'), undef, 'YY should not map' );
 
 cmp_ok( $WWW::Patent::Page::ESPACE_EP::VERSION,
-	'>=', 0.1, "ESPACE_EP loaded, VERSION is 0.1 or above" );
+	'>=', 0.21, "ESPACE_EP loaded, VERSION is 0.21 or above" );
 cmp_ok( $WWW::Patent::Page::USPTO::VERSION,
-	'>=', 0.1, "USPTO loaded, VERSION is 0.1 or above" );
+	'>=', 0.25, "USPTO loaded, VERSION is 0.25 or above" );
 
 my $parsemessage = $browser->parse_doc_id('US6,123,456');
 
@@ -39,21 +40,21 @@ is( $browser->{'patent'}->{'country'}, 'US', 'object records country as US' );
 
 $parsemessage = $browser->parse_doc_id('US6_123_456');
 
-like( $parsemessage, qr/country:US/,     'country is US' );
-like( $parsemessage, qr/number:6123456/, 'id is 6123456 from 6_123_456' );
+like( $parsemessage, qr/country:US/,     "country is US: '$parsemessage'" );
+like( $parsemessage, qr/number:6123456/, "id is 6123456 from 6_123_456: '$parsemessage'" );
 
 $parsemessage = $browser->parse_doc_id('YY99999');
 is( $parsemessage, undef, 'YY is not a recognized country' );
 
-$browser = WWW::Patent::Page->new('US6123456');    
+$browser = WWW::Patent::Page->new('US6123456');
 
-is( $browser->{'patent'}->{'doc_id'}, 'US6123456', 'object records doc_ID as US when passed as value not parameter' );
+is( $browser->{'patent'}->{'doc_id'}, 'US6123456', 'object records doc_ID as US when passed as value not parameter: ' . $browser->{'patent'}->{'doc_id'}  );
 
 is( $browser->{'patent'}->{'number'}, 6123456 , 'number from doc_id becomes the number parameter value');
 
-$browser = WWW::Patent::Page->new('EP6123456');    
+$browser = WWW::Patent::Page->new('EP6123456');
 
-is( $browser->{'patent'}->{'country'}, 'EP', 'object records doc_ID as EP when passed as value not parameter, overriding default' );
+is( $browser->{'patent'}->{'country'}, 'EP', 'object records doc_ID as EP when passed as value not parameter, overriding default'. $browser->{'patent'}->{'doc_id'}   );
 
 my $patent_document = WWW::Patent::Page->new();    # new object
 
@@ -78,7 +79,7 @@ $document2 = $patent_document->get_page(
 
 
 ok( !$document2->is_success, 'correctly failed due to no malformed request, no method');
-like( $document2->message, qr/country/ , "Message: '".$document2->message."'" ); #22
+like( $document2->message, qr/no country defined/ , "correctly messaged 'no country'. - '".$document2->message."'" ); #22
 
 
 
@@ -92,7 +93,7 @@ like( $document2->message, qr/country/ , "Message: '".$document2->message."'" );
 );
 
 ok( !$document2->is_success, 'correctly failed due to no number');
-like( $document2->message, qr/number/ , 'correct failure message about number.'." Message: '".$document2->message."'" ); 
+like( $document2->message, qr/number/ , 'correct failure message about number.'." - '".$document2->message."'" );
 
 
  $document2 = $patent_document->get_page(
@@ -103,7 +104,7 @@ like( $document2->message, qr/number/ , 'correct failure message about number.'.
 );
 
 ok( !$document2->is_success, 'correctly failed due to no office');
-like( $document2->message, qr/office/ , 'correct failure message about office.'." Message: '".$document2->message."'" ); 
+like( $document2->message, qr/office/ , 'correct failure message about office.'." - '".$document2->message."'" );
 
 
 
@@ -117,7 +118,7 @@ like( $document2->message, qr/office/ , 'correct failure message about office.'.
 );
 
 ok( !$document2->is_success, 'correctly failed due to no format');
-like( $document2->message, qr/format/ , 'correct failure message about format.'." Message: '".$document2->message."'" ); 
+like( $document2->message, qr/format/ , 'correct failure message about format.'." - '".$document2->message."'" );
 
 $document2 = $patent_document->get_page(
 	'doc_id' => 'EP1234567',
@@ -127,7 +128,7 @@ $document2 = $patent_document->get_page(
 );
 
 ok( !$document2->is_success, 'correctly failed due to no format');
-like( $document2->message, qr/format/ , 'correct failure message about format.'." Message: '".$document2->message."'" ); 
+like( $document2->message, qr/format/ , 'correct failure message about format.'." - '".$document2->message."'" );
 
 
  $document2 = $patent_document->get_page(
@@ -139,7 +140,7 @@ like( $document2->message, qr/format/ , 'correct failure message about format.'.
 );
 
 ok( !$document2->is_success, 'correctly failed due to no format');
-like( $document2->message, qr/format/ , 'correct failure message about format.'." Message: '".$document2->message."'" ); 
+like( $document2->message, qr/format/ , 'correct failure message about format.'." - '".$document2->message."'" );
 
 
 
@@ -152,6 +153,6 @@ like( $document2->message, qr/format/ , 'correct failure message about format.'.
 );
 
 ok( !$document2->is_success, 'correctly failed due to no malformed request, no method');
-like( $document2->message, qr/method/ , 'correct failure message about method.'." Message: '".$document2->message."'" ); 
+like( $document2->message, qr/method/ , 'correct failure message about method.'." - '".$document2->message."'" );
 
 

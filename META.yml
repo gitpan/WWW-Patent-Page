@@ -1,37 +1,43 @@
 ---
 name: WWW-Patent-Page
-version: 0.09
-author: ~
+version: v0.100.0
+author:
+  - 'Wanda B. Anon <Wanda_B_Anon@yahoo.com>'
 abstract: |-
-  get a patent page or document (e.g. htm, pdf, tif) 
-  from selected source (e.g. from United States Patent and Trademark Office 
+  get a patent page or document (e.g. htm, pdf, tif)
+  from selected source (e.g. from United States Patent and Trademark Office
   (USPTO) website or the European Patent Office (ESPACE_EP). and
   place into a WWW::Patent::Page::Response object)
 license: perl
+resources:
+  license: http://dev.perl.org/licenses/
 requires:
+  English: 0
+  File::Temp: 0.16
   HTML::HeadParser: 0
   HTML::TokeParser: 0
   HTTP::Request: 0
   HTTP::Response: 0
   LWP::UserAgent: 2.003
-  PDF::API2: 0
+  PDF::API2: 2.00
   diagnostics: 0
   strict: 0
+  version: 0
   warnings: 0
 provides:
   WWW::Patent::Page:
     file: lib/WWW/Patent/Page.pm
-    version: 0.09
+    version: v0.100.0
   WWW::Patent::Page::ESPACE_EP:
     file: lib/WWW/Patent/Page/ESPACE_EP.pm
     version: 0.21
   WWW::Patent::Page::MICROPATENT:
     file: lib/WWW/Patent/Page/MICROPATENT.pm
     version: 0.03
-  WWW::Patent::Page::Response:
-    file: lib/WWW/Patent/Page/Response.pm
-    version: 0.021
   WWW::Patent::Page::USPTO:
     file: lib/WWW/Patent/Page/USPTO.pm
-    version: 0.24
-generated_by: Module::Build version 0.2611
+    version: 0.25
+generated_by: Module::Build version 0.2806
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.2.html
+  version: 1.2
