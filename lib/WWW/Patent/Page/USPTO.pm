@@ -18,7 +18,7 @@ use File::Temp 0.16 ;
 
 use vars qw/ $VERSION @ISA/;
 
-$VERSION = "0.25";
+$VERSION = "0.27";
 
 sub methods {
 	return (
@@ -441,7 +441,7 @@ FINDPAGE: while ( $token = $p->get_tag("a") ) {
 					UNLINK => 1,
 					);
 	print $temp_tif $response->content;
-	close $temp_tif;
+#	close $temp_tif;
 
 # convert to pdf
 	my $gfx = $page->gfx();
@@ -469,7 +469,7 @@ FINDPAGE: while ( $token = $p->get_tag("a") ) {
 					UNLINK => 1,
 					);
 	print $temp_tif $response->content;
-	close $temp_tif;
+#	close $temp_tif;
 
 # convert to pdf
 	$page = $pdf->page(0);

@@ -1,5 +1,10 @@
 Revision history for Perl module WWW::Patent::Page and its submodules
 
+0.101.0 finished Aug 2007
+
+	-commented out two "close" statements on File::Temp objects in USPTO_pdf method of USPTO class; I think these could be closed after the files are accessed, but going for minimal changes.  This may make a memory leak, so let me know.
+	-improved critic test in looking for TEST_AUTHOR
+	
 0.100.0 finished Feb 2007
 	-three part release number requires installing "version.pm" distribution (sorry about that...)
 	-rewrote the parser of "patent numbers"- method 'parse_doc_id'

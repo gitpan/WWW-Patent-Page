@@ -14,7 +14,7 @@ my ( %METHODS, %_country_known );
 my ( %MODULES, $default_country, $default_office, @modules_to_load );
 
 #$VERSION = 0.10;
-use version; our $VERSION = qv('0.100.0'); #February, 2007
+use version; our $VERSION = qv('0.101.0'); #February, 2007
 use base qw( LWP::UserAgent );
 %_country_known = _load_country_known();
 

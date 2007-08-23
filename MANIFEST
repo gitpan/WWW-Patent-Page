@@ -22,6 +22,5 @@ t/050_espace_ep.t
 t/100_uspto.t
 t/105_uspto_pdf.t
 t/200_micropatent.t
-t/999_critic.t
 Build.PL
 Makefile.PL
