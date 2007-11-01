@@ -1,8 +1,4 @@
 # -*- perl -*-
-
-# t/100uspto.t - test documented interface
-#use strict;
-#use warnings;
 use Test::More tests => 151 ;
 use WWW::Patent::Page;
 
@@ -10,14 +6,6 @@ cmp_ok( $WWW::Patent::Page::VERSION,
 	'>=', 0.09, "loaded, VERSION is 0.09 or above" );
 
 my @tests = (
-
-
-
-
-
-
-
-
 
  [ '  US_6_123_456_B2_Comment, comma','US','','6123456','B2','Comment, comma'] ,
  [ '  _6_123_456_Comment','US','','6123456','','Comment'] ,

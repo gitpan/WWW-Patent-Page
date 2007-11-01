@@ -17,8 +17,6 @@ my $document1 = $patent_document->get_page(
 );
 like( $document1->content, qr/Anon/, ' 3 utility patent by Ramon L. Anon' );
 
-#my %attributes = $patent_document->get_patent('all');  # hash of all
-#warn "\nAttributes:\n" , join ("\n" , %attributes) ;
 is( $document1->get_parameter('number'), 4299215, ' 4 the patent document number' );
 is( $document1->get_parameter('doc_id'), '4,299,215',
 	' 5 the patent document identifier supplied' );

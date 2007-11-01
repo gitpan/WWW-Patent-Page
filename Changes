@@ -1,7 +1,16 @@
 Revision history for Perl module WWW::Patent::Page and its submodules
 
-0.101.0 finished Aug 2007
+0.103.0 finished Oct 30 2007
+	-corrected bad use of %passed_parms and %passed_parm
+	-added test that diagnosed correction immediately above
 
+0.102.0 finished August 2007
+	-polled micropatent pdf to give time to get the stuff ready 
+	-added a new "document" type to MICROPATENT, called "data" (versus "pdf", "html", etc.) from the "worksheet" they provide, that delivers a hash of data about the patent (inventors, assignee, citations, claims, etc.) 
+	-increased File::Temp version to 0.17 to account for ->seek method 
+	-returned HTTP::Response -like objects in various places where they should be... whoops 
+	
+0.101.0 finished Aug 2007
 	-commented out two "close" statements on File::Temp objects in USPTO_pdf method of USPTO class; I think these could be closed after the files are accessed, but going for minimal changes.  This may make a memory leak, so let me know.
 	-improved critic test in looking for TEST_AUTHOR
 	

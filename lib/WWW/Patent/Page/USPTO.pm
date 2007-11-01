@@ -7,27 +7,28 @@ use warnings;
 use diagnostics;
 use Carp;
 use subs
-	qw( methods USPTO_country_known  USPTO_htm USPTO_tif USPTO_pdf USPTO_terms  );  #USPTO_pdf
+	qw( methods USPTO_country_known  USPTO_htm USPTO_tif USPTO_pdf USPTO_terms  )
+	;    #USPTO_pdf
 use LWP::UserAgent 2.003;
 require HTTP::Request;
 use HTML::HeadParser;
 use HTML::TokeParser;
 use PDF::API2 2.00;
-use File::Temp 0.16 ;
-# use Data::Dumper::Simple;
+use File::Temp 0.17;
 
 use vars qw/ $VERSION @ISA/;
 
-$VERSION = "0.27";
+$VERSION = "0.28";
 
 sub methods {
 	return (
-		'USPTO_htm'                 => \&USPTO_htm,
-		'USPTO_tif'                 => \&USPTO_tif,
-		'USPTO_pdf'                 => \&USPTO_pdf,
+		'USPTO_htm'           => \&USPTO_htm,
+		'USPTO_tif'           => \&USPTO_tif,
+		'USPTO_pdf'           => \&USPTO_pdf,
 		'USPTO_country_known' => \&USPTO_country_known,
-#		'USPTO_parse_doc_id'        => \&USPTO_parse_doc_id,
-		'USPTO_terms'               => \&USPTO_terms,
+
+		#		'USPTO_parse_doc_id'        => \&USPTO_parse_doc_id,
+		'USPTO_terms' => \&USPTO_terms,
 	);
 
 }
@@ -50,13 +51,14 @@ sub methods {
 #  }
 
 sub USPTO_country_known {
-	my $self = shift @_;
+	my $self    = shift @_;
 	my $country = shift;
-	if ('US' eq uc($country)) {return ('1790 on');} else {carp 'US only!';return undef}
+	if ( 'US' eq uc($country) ) { return ('1790 on'); }
+	else { carp 'US only!'; return undef }
 }
 
 sub USPTO_htm {
-	my ($self,$page_response) = @_;
+	my ( $self, $page_response ) = @_;
 	my $request;
 	my $request_text;
 	if (   ( !$self->{'patent'}->{'doc_type'} )
@@ -64,8 +66,7 @@ sub USPTO_htm {
 	{
 
 		# Application  (11 digits)
-		$request_text =
-			  'http://appft1.uspto.gov/netacgi/nph-Parser?TERM1='
+		$request_text = 'http://appft1.uspto.gov/netacgi/nph-Parser?TERM1='
 			. $self->{'patent'}{'number'}
 			. '&Sect1=PTO1&Sect2=HITOFF&d=PG01&p=1&u=%2Fnetahtml%2FPTO%2Fsrchnum.html&r=0&f=S&l=50';
 		$request = HTTP::Request->new( 'GET' => $request_text );
@@ -89,22 +90,22 @@ sub USPTO_htm {
 	elsif ( $self->{'patent'}->{'doc_type'} ) {
 
 		# Non-Utility Patent
-		$request_text =
-			"http://patft.uspto.gov/netacgi/nph-Parser?patentnumber=$self->{'patent'}->{'doc_type'}$self->{'patent'}{'number'}";
+		$request_text
+			= "http://patft.uspto.gov/netacgi/nph-Parser?patentnumber=$self->{'patent'}->{'doc_type'}$self->{'patent'}{'number'}";
 		$request = HTTP::Request->new( 'GET' => $request_text );
 	}
 	else {
-		      #Standard Utility Patent
-		$request_text =
-			"http://patft.uspto.gov/netacgi/nph-Parser?patentnumber=$self->{'patent'}{'number'}";
+
+		#Standard Utility Patent
+		$request_text
+			= "http://patft.uspto.gov/netacgi/nph-Parser?patentnumber=$self->{'patent'}{'number'}";
 		$request = HTTP::Request->new( 'GET' => $request_text );
 	}
 
 	# print "\nAlmost $self->{'retrieved_identifier'}->{'number'} \n";
-	my $response =
-		$self->request($request)
-		;     # use the agent to make the request and get the response
-	          # print "\there\n";
+	my $response = $self->request($request)
+		;    # use the agent to make the request and get the response
+	         # print "\there\n";
 	if ( $response->is_success ) {
 		my $html = $response->content;
 
@@ -124,20 +125,22 @@ sub USPTO_htm {
 			$html     = $response->content;
 		}
 
-		if ($html =~ m/No patents have matched your query/) {
+		if ( $html =~ m/No patents have matched your query/ ) {
 			$page_response->set_parameter( 'is_success', undef );
-			$page_response->set_parameter( 'message','No patents have matched your query' );  # No patents have matched your query
+			$page_response->set_parameter( 'message',
+				'No patents have matched your query' )
+				;    # No patents have matched your query
 			return $page_response;
 		}
 
-		unless ( $html =~
-			s/.*?<html>.*?<head>/<html>\n<head><!-- Modified by perl module WWW::Patent::Page from information provided by http:\/\/www.uspto.gov ; dedicated to public ; use at own risk -->\n<title>US /is
+		unless ( $html
+			=~ s/.*?<html>.*?<head>/<html>\n<head><!-- Modified by perl module WWW::Patent::Page from information provided by http:\/\/www.uspto.gov ; dedicated to public ; use at own risk -->\n<title>US /is
 			)
 		{
 			carp "header weird A \n";
 		}
-		unless ( $html =~
-			s/<head>.*(<title>)\D+/<head><!-- Modified by perl module WWW::Patent::Page from information provided by http:\/\/www.uspto.gov ; dedicated to public ; use at own risk -->\n<title>US /is
+		unless ( $html
+			=~ s/<head>.*(<title>)\D+/<head><!-- Modified by perl module WWW::Patent::Page from information provided by http:\/\/www.uspto.gov ; dedicated to public ; use at own risk -->\n<title>US /is
 			)
 		{
 			carp "header weird B \n";
@@ -153,8 +156,8 @@ sub USPTO_htm {
 		unless ( $html =~ s/(.*)<hr>(.*)body>/$1<\/body>/is ) {
 			carp "end weird  \n$html\n";
 		}
-		$html =~
-			s|"/netacgi/nph-Parser|"http://patft.uspto.gov/netacgi/nph-Parser|gi;
+		$html
+			=~ s|"/netacgi/nph-Parser|"http://patft.uspto.gov/netacgi/nph-Parser|gi;
 		$page_response->set_parameter( 'content', $html );
 		return $page_response;
 	}
@@ -167,37 +170,8 @@ sub USPTO_htm {
 }
 
 sub USPTO_tif {
-	my ($self, $page_response) = @_;
+	my ( $self, $page_response ) = @_;
 	my ( $request, $base, $zero_fill );
-
-#  Direct access to the full-page image database is now
-#  permitted without first conducting a search on the full-text database. Such
-#  access is now possible by using a URL of the form:
-#  http://patimg1.uspto.gov/.piw?Docid=0nnnnnnn&idkey=NONE
-#  or
-#  http://patimg2.uspto.gov/.piw?Docid=0nnnnnnn&idkey=NONE
-#  where "nnnnnnn" is the seven-digit patent number (right-justified with
-#  leading zeroes). The first URL, to patimg1.uspto.gov, is used if the patent
-#  number's last two (low-order) digits are in the range 00 to 49; the first
-#    URL, to patimg2.uspto.gov, is used if the patent number's last two digits
-#  are in the range 50 to 99
-
-# http://patimg2.uspto.gov/.piw?Docid=D0339456&idkey=NONE
-# http://patimg2.uspto.gov/.DImg?Docid=US0PP008899&PageNum=1&IDKey=920747D732D2&ImgFormat=tif
-# $request = new HTTP::Request('GET' => "http://patft.uspto.gov/netacgi/nph-Parser?TERM1=PP8%2C899&Sect1=PTO1&Sect2=HITOFF&d=PALL&p=1&u=%2Fnetahtml%2Fsrchnum.htm&r=0&f=S&l=50");
-# $request = new HTTP::Request('GET' => "http://patimg1.uspto.gov/.DImg?Docid=US0PP008901&PageNum=2&IDKey=8C4FEBE740CB&ImgFormat=tif");
-
-# Referer: http://patft.uspto.gov/netahtml/srchnum.htm
-# Request: http://patft.uspto.gov/netacgi/nph-Parser?TERM1=PP8%2C901&Sect1=PTO1&Sect2=HITOFF&d=PALL&p=1&u=%2Fnetahtml%2Fsrchnum.htm&r=0&f=S&l=50
-# Request: http://patft.uspto.gov/netacgi/nph-Parser?Sect1=PTO1&Sect2=HITOFF&d=PALL&p=1&u=/netahtml/srchnum.htm&r=1&f=G&l=50&s1=PP8,901.WKU.&OS=PN/PP8,901&RS=PN/PP8,901
-# Request: http://patimg1.uspto.gov/.piw?Docid=PP008901&homeurl=http%3A%2F%2Fpatft.uspto.gov%2Fnetacgi%2Fnph-Parser%3FSect1%3DPTO1%2526Sect2%3DHITOFF%2526d%3DPALL%2526p%3D1%2526u%3D%2Fnetahtml%2Fsrchnum.htm%2526r%3D1%2526f%3DG%2526l%3D50%2526s1%3DPP8,901.WKU.%2526OS%3DPN%2FPP8,901%2526RS%3DPN%2FPP8,901&PageNum=&Rtype=&SectionNum=&idkey=8C4FEBE740CB
-# Request: http://patimg1.uspto.gov/.DImg?Docid=US0PP008901&PageNum=1&IDKey=8C4FEBE740CB&ImgFormat=tif
-# page 2
-# Request: http://patimg1.uspto.gov/.piw?docid=US0PP008901&PageNum=2&IDKey=8C4FEBE740CB&HomeUrl=http://patft.uspto.gov/netacgi/nph-Parser?Sect1=PTO1%2526Sect2=HITOFF%2526d=PALL%2526p=1%2526u=/netahtml/srchnum.htm%2526r=1%2526f=G%2526l=50%2526s1=PP8,901.WKU.%2526OS=PN/PP8,901%2526RS=PN/PP8,901
-# Request: http://patimg1.uspto.gov/.DImg?Docid=US0PP008901&PageNum=2&IDKey=8C4FEBE740CB&ImgFormat=tif
-# page 3
-# Request: http://patimg1.uspto.gov/.piw?docid=US0PP008901&PageNum=3&IDKey=8C4FEBE740CB&HomeUrl=http://patft.uspto.gov/netacgi/nph-Parser?Sect1=PTO1%2526Sect2=HITOFF%2526d=PALL%2526p=1%2526u=/netahtml/srchnum.htm%2526r=1%2526f=G%2526l=50%2526s1=PP8,901.WKU.%2526OS=PN/PP8,901%2526RS=PN/PP8,901
-# Request: http://patimg1.uspto.gov/.DImg?Docid=US0PP008901&PageNum=3&IDKey=8C4FEBE740CB&ImgFormat=tif
 
 	if ( $self->{'patent'}{'number'} =~ m/(0|1|2|3|4)\d$/ ) {
 
@@ -206,37 +180,32 @@ sub USPTO_tif {
 	}
 	else { $base = 'patimg2.uspto.gov'; }
 	my $zerofill = sprintf '%0.8u', $self->{'patent'}{'number'};
+
 	# print "\nZerofill: $zerofill\n";
 	if ( $self->{'patent'}->{'doc_type'} ) {
-		$request =
-			HTTP::Request->new( 'GET' =>
+		$request = HTTP::Request->new( 'GET' =>
 				"http://$base/.piw?Docid=$self->{'patent'}->{'doc_type'}$zerofill\&idkey=NONE"
-			);
+		);
 	}
 	else {
-		$request =
-			HTTP::Request->new(
+		$request = HTTP::Request->new(
 			'GET' => "http://$base/.piw?Docid=$zerofill\&idkey=NONE" );
 	}
 
 	# print "\nAlmost $self->{'retrieved_identifier'}->{'number'} \n";
 	my $response = $self->request($request);
 
-	# print "\there\n";
 	my $html = $response->content;
-#	warn "USPTO_tif response\n", Dumper($response);
 
 	{    # page numbers
 
-		#		if ($html =~ m/PageNum=(\d+)/) {
-		#			$self->{'patent'}->{'page'} = $1;
-		#		}
 		if ( $html =~ m/NumPages=(\d+)/ ) {
-			$page_response->set_parameter('pages', $1);
+			$page_response->set_parameter( 'pages', $1 );
 
 		}
 		elsif ( $html =~ m/(\d+)\s+of\s+(\d+)\s+pages/ ) {
-			$page_response->set_parameter('pages', $2);
+			$page_response->set_parameter( 'pages', $2 );
+
 			# print "Pages: $2\n";
 		}
 		else {
@@ -248,7 +217,7 @@ sub USPTO_tif {
 	my $url;
 	my $token;
 FINDPAGE: while ( $token = $p->get_tag("a") ) {
-		$url = $token->[1]{href} || "-";   #very strange or construct ???
+		$url = $token->[1]{href} || "-";    #very strange or construct ???
 		if ( $url =~ m/$self->{'patent'}{'number'}/ ) { last FINDPAGE; }
 
 		# print "$url\n";
@@ -263,20 +232,21 @@ FINDPAGE: while ( $token = $p->get_tag("a") ) {
 	$request = new HTTP::Request( 'GET' => "$url" )
 		or carp "bad numbered page $self->{'patent'}{'page'} fetch $url";
 	$response = $self->request($request);
-	$html = $response->content;
+	$html     = $response->content;
 
 	$p = HTML::TokeParser->new( \$html );
 
- FINDPAGE: while ($token = $p->get_tag("embed") ){
-	$url = $token->[1]->{src} || "-";
-	if ($url =~ m/image\/tiff/) {last FINDPAGE; }
+FINDPAGE: while ( $token = $p->get_tag("embed") ) {
+		$url = $token->[1]->{src} || "-";
+		if ( $url =~ m/image\/tiff/ ) { last FINDPAGE; }
 	}
 
-# get tiff image
+	# get tiff image
 	$url = "http://$base$url";
 	$request = new HTTP::Request( 'GET' => "$url" )
 		or carp "Coudn't retrieve the tiff image fetch $url";
 	$response = $self->request($request);
+
 	# print "\nPage response\n$response->content\n\n";
 	$page_response->set_parameter( 'content', $response->content );
 
@@ -284,72 +254,44 @@ FINDPAGE: while ( $token = $p->get_tag("a") ) {
 }
 
 sub USPTO_pdf {
-	my ($self, $page_response) = @_;
+	my ( $self, $page_response ) = @_;
 	my ( $request, $base, $zero_fill );
-#	warn Dumper ($self);
-#	never rely on memory buffer
-	my $tempdir = $self->{'patent'}->{'tempdir'} if ($self->{'patent'}->{'tempdir'});
-	my $fn_template = $self->{'patent'}->{'doc_id'}."_XXXX";
-#		print "\n\$self->{'patent'}->{'doc_id'} = '$self->{'patent'}->{'doc_id'}' \@ 275 \n";
 
-# generate unique pdf filename
-	my $pdf_file = new File::Temp(	TEMPLATE => $fn_template,
-					DIR => $tempdir,
-					SUFFIX => '.pdf',
-					UNLINK => 1,
-					);
+	my $tempdir = $self->{'patent'}->{'tempdir'}
+		if ( $self->{'patent'}->{'tempdir'} );
+	my $fn_template = $self->{'patent'}->{'doc_id'} . "_XXXX";
+
+	my $pdf_file = new File::Temp(
+		TEMPLATE => $fn_template,
+		DIR      => $tempdir,
+		SUFFIX   => '.pdf',
+		UNLINK   => 1,
+	);
 	my $pdf_fn = $pdf_file->filename;
-	my $pdf = new PDF::API2();
+	my $pdf    = new PDF::API2();
 	print $pdf_file $pdf->stringify;
 	close $pdf_file;
 
 	my $currenttime = localtime();
-	my $short_id = $self->{'patent'}{'country'} . $self->{'patent'}->{'number'};
+	my $short_id
+		= $self->{'patent'}{'country'} . $self->{'patent'}->{'number'};
 
 #	my $pdf = new PDF::API2(-file => "$tempdir/$self->{'patent'}{'doc_id'}".".pdf");
 #	my $pdf = new PDF::API2(-file => $pdf_fn);
-	$pdf = PDF::API2->open ($pdf_fn);
-	my %h           = $pdf->info(
-			'Author'       => "Programatically Produced from Public Information",
-			'CreationDate' => $currenttime,
-			'ModDate'      => $currenttime,
-			'Creator'      => "WWW::Patent::Page::USPTO_pdf",
-			'Producer'     => "US Patent Office and PDF::API2",
-			'Title'        => "$short_id",
-			'Subject'      => "patent",
-			'Keywords'     => "$short_id WWW::Patent::Page"
-		);
+	$pdf = PDF::API2->open($pdf_fn);
+	my %h = $pdf->info(
+		'Author'       => "Programatically Produced from Public Information",
+		'CreationDate' => $currenttime,
+		'ModDate'      => $currenttime,
+		'Creator'      => "WWW::Patent::Page::USPTO_pdf",
+		'Producer'     => "US Patent Office and PDF::API2",
+		'Title'        => "$short_id",
+		'Subject'      => "patent",
+		'Keywords'     => "$short_id WWW::Patent::Page"
+	);
 	my $page = $pdf->page();
 	$page->mediabox('A4');
 
-#  Direct access to the full-page image database is now
-#  permitted without first conducting a search on the full-text database. Such
-#  access is now possible by using a URL of the form:
-#  http://patimg1.uspto.gov/.piw?Docid=0nnnnnnn&idkey=NONE
-#  or
-#  http://patimg2.uspto.gov/.piw?Docid=0nnnnnnn&idkey=NONE
-#  where "nnnnnnn" is the seven-digit patent number (right-justified with
-#  leading zeroes). The first URL, to patimg1.uspto.gov, is used if the patent
-#  number's last two (low-order) digits are in the range 00 to 49; the first
-#    URL, to patimg2.uspto.gov, is used if the patent number's last two digits
-#  are in the range 50 to 99
-
-# http://patimg2.uspto.gov/.piw?Docid=D0339456&idkey=NONE
-# http://patimg2.uspto.gov/.DImg?Docid=US0PP008899&PageNum=1&IDKey=920747D732D2&ImgFormat=tif
-# $request = new HTTP::Request('GET' => "http://patft.uspto.gov/netacgi/nph-Parser?TERM1=PP8%2C899&Sect1=PTO1&Sect2=HITOFF&d=PALL&p=1&u=%2Fnetahtml%2Fsrchnum.htm&r=0&f=S&l=50");
-# $request = new HTTP::Request('GET' => "http://patimg1.uspto.gov/.DImg?Docid=US0PP008901&PageNum=2&IDKey=8C4FEBE740CB&ImgFormat=tif");
-
-# Referer: http://patft.uspto.gov/netahtml/srchnum.htm
-# Request: http://patft.uspto.gov/netacgi/nph-Parser?TERM1=PP8%2C901&Sect1=PTO1&Sect2=HITOFF&d=PALL&p=1&u=%2Fnetahtml%2Fsrchnum.htm&r=0&f=S&l=50
-# Request: http://patft.uspto.gov/netacgi/nph-Parser?Sect1=PTO1&Sect2=HITOFF&d=PALL&p=1&u=/netahtml/srchnum.htm&r=1&f=G&l=50&s1=PP8,901.WKU.&OS=PN/PP8,901&RS=PN/PP8,901
-# Request: http://patimg1.uspto.gov/.piw?Docid=PP008901&homeurl=http%3A%2F%2Fpatft.uspto.gov%2Fnetacgi%2Fnph-Parser%3FSect1%3DPTO1%2526Sect2%3DHITOFF%2526d%3DPALL%2526p%3D1%2526u%3D%2Fnetahtml%2Fsrchnum.htm%2526r%3D1%2526f%3DG%2526l%3D50%2526s1%3DPP8,901.WKU.%2526OS%3DPN%2FPP8,901%2526RS%3DPN%2FPP8,901&PageNum=&Rtype=&SectionNum=&idkey=8C4FEBE740CB
-# Request: http://patimg1.uspto.gov/.DImg?Docid=US0PP008901&PageNum=1&IDKey=8C4FEBE740CB&ImgFormat=tif
-# page 2
-# Request: http://patimg1.uspto.gov/.piw?docid=US0PP008901&PageNum=2&IDKey=8C4FEBE740CB&HomeUrl=http://patft.uspto.gov/netacgi/nph-Parser?Sect1=PTO1%2526Sect2=HITOFF%2526d=PALL%2526p=1%2526u=/netahtml/srchnum.htm%2526r=1%2526f=G%2526l=50%2526s1=PP8,901.WKU.%2526OS=PN/PP8,901%2526RS=PN/PP8,901
-# Request: http://patimg1.uspto.gov/.DImg?Docid=US0PP008901&PageNum=2&IDKey=8C4FEBE740CB&ImgFormat=tif
-# page 3
-# Request: http://patimg1.uspto.gov/.piw?docid=US0PP008901&PageNum=3&IDKey=8C4FEBE740CB&HomeUrl=http://patft.uspto.gov/netacgi/nph-Parser?Sect1=PTO1%2526Sect2=HITOFF%2526d=PALL%2526p=1%2526u=/netahtml/srchnum.htm%2526r=1%2526f=G%2526l=50%2526s1=PP8,901.WKU.%2526OS=PN/PP8,901%2526RS=PN/PP8,901
-# Request: http://patimg1.uspto.gov/.DImg?Docid=US0PP008901&PageNum=3&IDKey=8C4FEBE740CB&ImgFormat=tif
 
 	if ( $self->{'patent'}{'number'} =~ m/(0|1|2|3|4)\d$/ ) {
 
@@ -358,35 +300,29 @@ sub USPTO_pdf {
 	}
 	else { $base = 'patimg2.uspto.gov'; }
 	my $zerofill = sprintf '%0.8u', $self->{'patent'}{'number'};
-	# print "\nZerofill: $zerofill\n";
+
 	if ( $self->{'patent'}->{'doc_type'} ) {
-		$request =
-			HTTP::Request->new( 'GET' =>
+		$request = HTTP::Request->new( 'GET' =>
 				"http://$base/.piw?Docid=$self->{'patent'}->{'doc_type'}$zerofill\&idkey=NONE"
-			);
+		);
 	}
 	else {
-		$request =
-			HTTP::Request->new(
+		$request = HTTP::Request->new(
 			'GET' => "http://$base/.piw?Docid=$zerofill\&idkey=NONE" );
 	}
 
-	# print "\nAlmost $self->{'retrieved_identifier'}->{'number'} \n";
 	my $response = $self->request($request);
 
-	# print "\there\n";
 	my $html = $response->content;
 
 	{    # page numbers
 
-		#		if ($html =~ m/PageNum=(\d+)/) {
-		#			$self->{'patent'}->{'page'} = $1;
-		#		}
 		if ( $html =~ m/NumPages=(\d+)/ ) {
-			$page_response->set_parameter('pages', $1);
+			$page_response->set_parameter( 'pages', $1 );
 		}
 		elsif ( $html =~ m/(\d+)\s+of\s+(\d+)\s+pages/ ) {
-			$page_response->set_parameter('pages', $2);
+			$page_response->set_parameter( 'pages', $2 );
+
 			# print "Pages: $2\n";
 		}
 		else {
@@ -398,95 +334,117 @@ sub USPTO_pdf {
 	my $url;
 	my $token;
 FINDPAGE: while ( $token = $p->get_tag("a") ) {
-		$url = $token->[1]{href} || "-";   #very strange or construct ???
+		$url = $token->[1]{href} || "-";    #very strange or construct ???
 		if ( $url =~ m/$self->{'patent'}{'number'}/ ) { last FINDPAGE; }
 
 		# print "$url\n";
 	}
 	undef $p;
 
-	if (defined($self->{'patent'}{'page'})) {$url =~ s/PageNum=(\d+)/PageNum=$self->{'patent'}{'page'}/;}
-#	print "\n\$self->{'patent'}->{'page'} = '$self->{'patent'}->{'page'}'  |$url = '$url' \@ 391 \n";
+	if ( defined( $self->{'patent'}{'page'} ) ) {
+		$url =~ s/PageNum=(\d+)/PageNum=$self->{'patent'}{'page'}/;
+	}
 
+#	print "\n\$self->{'patent'}->{'page'} = '$self->{'patent'}->{'page'}'  |$url = '$url' \@ 391 \n";
 
 	$url = "http://$base$url";
 	$request = new HTTP::Request( 'GET' => "$url" )
 		or carp "bad numbered page $self->{'patent'}{'page'} fetch $url";
 	$response = $self->request($request);
-	$html = $response->content;
+	$html     = $response->content;
 
 	$p = HTML::TokeParser->new( \$html );
 
- FINDTIF: while ($token = $p->get_tag("embed") ){
-	$url = $token->[1]->{src} || "-";
-	if ($url =~ m/image\/tiff/) {last FINDTIF; }
+FINDTIF: while ( $token = $p->get_tag("embed") ) {
+		$url = $token->[1]->{src} || "-";
+		if ( $url =~ m/image\/tiff/ ) { last FINDTIF; }
 	}
-# get tiff image
+
+	# get tiff image
 	$url = "http://$base$url";
 	my $tif_url = $url;
 	$request = new HTTP::Request( 'GET' => "$url" )
 		or carp "Coudn't retrieve the tiff image fetch $url";
-	$response = $self->request($request);
 
-# store tif image
+	# prepare to store tif image
 	my $pat_page = 1;
-	if (defined($self->{'patent'}{'page'})){$pat_page =  $self->{'patent'}{'page'};}
+	if ( defined( $self->{'patent'}{'page'} ) ) {
+		$pat_page = $self->{'patent'}{'page'};
+	}
 
 #	print "\n\$self->{'patent'}->{'doc_id'} = '$self->{'patent'}->{'doc_id'}' \@ 413 \n";
 
-	$fn_template = $self->{'patent'}->{'doc_id'}."_p".$pat_page."_XXXX";
-	my $temp_tif = new File::Temp(	TEMPLATE => $fn_template,
-					DIR => $tempdir,
-					SUFFIX => '.tif',
-					UNLINK => 1,
-					);
-	print $temp_tif $response->content;
-#	close $temp_tif;
+	$fn_template = $self->{'patent'}->{'doc_id'} . "_p" . $pat_page . "_XXXX";
+	my $temp_tif = new File::Temp(
+		TEMPLATE => $fn_template,
+		DIR      => $tempdir,
+		SUFFIX   => '.tif',
+		UNLINK   => 1,
+	);
 
-# convert to pdf
-	my $gfx = $page->gfx();
-	$gfx->image($pdf->image_tiff($temp_tif), 0, 0, 0.23);
-
-# one page only
-	if ($self->{'patent'}{'page'}){
-		$page_response->set_parameter('content',$pdf->stringify);
-		return $page_response;
+	my $done = 0;
+	my $trys = 0;
+	if ( !$done and $trys < 5 ) {
+		$response = $self->request($request);
+		$trys++;
+		if ( $response->is_success and $response->content ) {
+			print $temp_tif $response->content;
+			$done = 1;
 		}
+		else {
+			carp
+				"attempt $trys response failed or content empty, no temporary tiff can be made- possibly network problem or timeout, will try again";
+		}
+	}
+	else { carp "too many attempts, giving up."; return (0); }
 
-# retrieve all pages
-	my $maxpage = $page_response->get_parameter('pages');
-	for (my $i = 2; $i <= $maxpage; $i++){
-	$tif_url =~ s/PageNum=(\d+)/PageNum=$i/;
-	$request = new HTTP::Request( 'GET' => "$tif_url" )
-		or carp "Couldn't retrieve the tiff image fetch $tif_url";
-	$response = $self->request($request);
+	#	close $temp_tif;
 
-# store tif image
-	$fn_template = $self->{'patent'}->{'doc_id'}."_p".$i."_XXXX";
-	$temp_tif = new File::Temp(	TEMPLATE => $fn_template,
-					DIR => $tempdir,
-					SUFFIX => '.tif',
-					UNLINK => 1,
-					);
-	print $temp_tif $response->content;
-#	close $temp_tif;
+	# convert to pdf
+	my $gfx = $page->gfx();
+	
+	$gfx->image( $pdf->image_tiff($temp_tif), 0, 0, 0.23 );
 
-# convert to pdf
-	$page = $pdf->page(0);
-	$gfx = $page->gfx();
-	$gfx->image($pdf->image_tiff($temp_tif), 0, 0, 0.23);
+	# one page only
+	if ( $self->{'patent'}{'page'} ) {
+		$page_response->set_parameter( 'content', $pdf->stringify );
+		return $page_response;
 	}
 
-# return pdf as string
-	$page_response->set_parameter('content',$pdf->stringify);
-#	$pdf->save;
-#	$pdf->saveas("$tempdir/$self->{'patent'}->{'doc_id'}".".pdf");
+	# retrieve all pages
+	my $maxpage = $page_response->get_parameter('pages');
+	for ( my $i = 2; $i <= $maxpage; $i++ ) {
+		$tif_url =~ s/PageNum=(\d+)/PageNum=$i/;
+		$request = new HTTP::Request( 'GET' => "$tif_url" )
+			or carp "Couldn't retrieve the tiff image fetch $tif_url";
+		$response = $self->request($request);
+
+		# store tif image
+		$fn_template = $self->{'patent'}->{'doc_id'} . "_p" . $i . "_XXXX";
+		$temp_tif    = new File::Temp(
+			TEMPLATE => $fn_template,
+			DIR      => $tempdir,
+			SUFFIX   => '.tif',
+			UNLINK   => 1,
+		);
+		print $temp_tif $response->content;
+
+		#	close $temp_tif;
+
+		# convert to pdf
+		$page = $pdf->page(0);
+		$gfx  = $page->gfx();
+		$gfx->image( $pdf->image_tiff($temp_tif), 0, 0, 0.23 );
+	}
+
+	# return pdf as string
+	$page_response->set_parameter( 'content', $pdf->stringify );
+
+	#	$pdf->save;
+	#	$pdf->saveas("$tempdir/$self->{'patent'}->{'doc_id'}".".pdf");
 
 	return $page_response;
 }
-
-
-
 
 sub USPTO_terms {
 	my ($self) = @_;

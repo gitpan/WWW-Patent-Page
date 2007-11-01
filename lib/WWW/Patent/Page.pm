@@ -13,8 +13,7 @@ use subs
 my ( %METHODS, %_country_known );
 my ( %MODULES, $default_country, $default_office, @modules_to_load );
 
-#$VERSION = 0.10;
-use version; our $VERSION = qv('0.101.0'); #February, 2007
+use version; our $VERSION = qv('0.103.1'); # Oct 31, 2007
 use base qw( LWP::UserAgent );
 %_country_known = _load_country_known();
 
@@ -27,7 +26,13 @@ $default_country = 'US';
 $default_office  = 'ESPACE_EP';    # they support many countries/entities
 
 sub new {
-	my ($class) = shift @_;
+	my ($class,$doc_id, %passed_parm); 
+	if ( @_ % 2) { ($class, %passed_parm)= (@_) ;} 
+	else { ($class,  $doc_id, %passed_parm)= (@_) ;}
+	# if an odd number of parameters is passed, the first is the doc_id
+	# the other pairs are the hash of values, including UserAgent settings
+	
+#	my ($class) = shift @_;
 	my %parent_parms = (
 		agent => "WWW::Patent::Page/$VERSION",
 
@@ -56,20 +61,20 @@ sub new {
 		'number'  => undef,    # 6123456
 		'tempdir' => undef,    # directory for temp files USPTO_pdf
 	);
-	my %passed_parms;
-	if ( @_ % 2 ) {
-		$default_parameter{'doc_id'} = shift @_;
-		$passed_parms{'doc_id'}      = $default_parameter{'doc_id'};
+#	my %passed_parms;
+	if ( $doc_id ) {
+		$default_parameter{'doc_id'} = $doc_id ;
+		$passed_parm{'doc_id'}      = $doc_id ;
 	}
 
 	# if an odd number of parameters is passed, the first is the doc_id
 	# the other pairs are the hash of values, including UserAgent settings
-	%passed_parms = @_;
+#	%passed_parm = @_;
 
-#	if ( defined($passed_parms{'country'} or defined($passed_parms{'number'}) { delete $passed_parms{'doc_id'}; $self->{'patent'}->{'doc_id'} = undef  }
+#	if ( defined($passed_parm{'country'} or defined($passed_parm{'number'}) { delete $passed_parm{'doc_id'}; $self->{'patent'}->{'doc_id'} = undef  }
 # Keep the patent-specific parms before creating the object.
 # (the parameters defined above are the only user exposed parameters allowed)
-	while ( my ( $key, $value ) = each %passed_parms ) {
+	while ( my ( $key, $value ) = each %passed_parm ) {
 		if ( exists $default_parameter{$key} ) {
 			$default_parameter{$key} = $value;
 		}
@@ -94,12 +99,12 @@ sub new {
 	$self->_load_modules(
 		@modules_to_load);   # list your custom modules here,
 			 # and put them into the folder that holds the others, e.g. USPTO.pm
-			if (     defined $passed_parms{'country'}
-				 and defined $passed_parms{'number'} )
+			if (     defined $passed_parm{'country'}
+				 and defined $passed_parm{'number'} )
 		{
-			delete $passed_parms{'doc_id'};
+			delete $passed_parm{'doc_id'};
 			$self->{'patent'}->{'doc_id'}
-				= $passed_parms{'country'} . $passed_parms{'number'};
+				= $passed_parm{'country'} . $passed_parm{'number'};
 		}
 		if ( $self->{'patent'}->{'doc_id'} )
 		{ # if called with doc ID, parse it- unless it seems to be parsed already
@@ -120,13 +125,11 @@ sub new {
 	}
 
 	sub parse_doc_id {
-		my $self  = shift @_;
-		my $found = undef;
-		my ( $country, $type, $number, $kind, $comment )
-			= ( undef, undef, undef, undef, undef );
-		my $id = shift
-			|| $self->{'patent'}->{'doc_id'}
-			|| ( carp 'No document id to parse' and return );
+		my ($self, $id) = (@_);
+		if ( ! $id ) {$id = $self->{'patent'}->{'doc_id'}
+			or ( carp 'No document id to parse' and return );}
+		my ($found, $country, $type, $number, $kind, $comment )
+			= (undef, undef, undef, undef, undef, undef );
 
 		# start country parsing
 		if ($id =~ m/^    # anchor to beginning of string
@@ -189,11 +192,6 @@ sub new {
 					return (undef);
 				}
 			}
-
-			#	print "$country\n";
-			#	print "$_country_known{$country}\n";
-
-			#	print "$type\n";
 
 			if ( (!exists( $_country_known{$country}) )
 				 || ( $type
@@ -292,23 +290,14 @@ sub new {
 	sub get_page {
 		my $self = shift;
 		my $count;
-
-		#	print "in get_page\n";
-
-		# $self->{'patent'}->{'doc_id'} = undef;
 		if ( @_ % 2 ) {
 			$self->{'patent'}->{'doc_id'} = shift @_;
-
-		#	&parse_doc_id($self);
-		# if an odd number of parameters is passed, the first is the doc_id
-		# the other pairs are the hash of values, including UserAgent settings
 		}
-		my %passed_parms = @_;
+		my %passed_parm = @_;
 
-#	if ( defined($passed_parms{'country'} || defined($passed_parms{'number'}) { delete $passed_parms{'doc_id'}; $self->{'patent'}->{'doc_id'} = undef }
 # Keep the patent-specific parms before USING the object.
 # (the parameters defined above are the only user exposed parameters allowed)
-		while ( my ( $key, $value ) = each %passed_parms ) {
+		while ( my ( $key, $value ) = each %passed_parm ) {
 			if ( exists $self->{$key} ) {
 				$self->{$key} = $value;
 			}
@@ -385,8 +374,7 @@ sub new {
 			carp "Undefined method $office"
 				. '_terms in Patent:Document::Retrieve';
 			return (
-				'WWW::Patent::Page uses publicly available information that may be subject to copyright.
-The user is responsible for observing intellectual property rights. '
+				'WWW::Patent::Page uses publicly available information that may be subject to copyright.'."\n".'The user is responsible for observing intellectual property rights. '
 			);
 		}
 		my $terms              = $office . '_terms';
@@ -410,11 +398,9 @@ The user is responsible for observing intellectual property rights. '
 	sub _agent { return "WWW::Patent::Page/$WWW::Patent::Page::VERSION" }
 
 	sub _load_modules {
-		my $class = shift;
-		my $baseclass = ref $class || $class;
-		my @modules = @_; # pass a list of the modules that will be available;
+		my ($class,@modules) = (@_); # pass a list of the modules that will be available;
 		  # add more to your call for this, for custom modules for other patent offices
-
+		my $baseclass = ref $class || $class;
 		# Go to each module and use them.  Also record what methods
 		# they support and enter them into the %METHODS hash.
 		foreach my $module (@modules) {
@@ -685,7 +671,7 @@ The user is responsible for observing intellectual property rights. '
 			'ZM' => 'Zambia',
 			'ZW' => 'Zimbabwe',
 		);
-
+# alphabetical by country 
 # Afghanistan  _  AF
 # African Intellectual Property Organization  _  OA
 # African Regional Intellectual Property Organization  _  AP
@@ -984,7 +970,7 @@ Please see the test suite for working examples.  The following is not guaranteed
 
           perl Build.PL
           ./Build
-          ./Build test
+          ./Build test verbose=1
           ./Build install
 
           or
@@ -993,6 +979,13 @@ Please see the test suite for working examples.  The following is not guaranteed
           make
           make test TEST_VERBOSE=1
           make install
+  
+          or on ActiveState or otherwise using nmake
+          
+          perl Makefile.PL
+          nmake
+          nmake test TEST_VERBOSE=1
+          nmake install
 
 Examples of use:
 

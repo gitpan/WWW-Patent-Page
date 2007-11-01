@@ -20,7 +20,7 @@ $VERSION = "0.21";
 
 sub methods {
 	return (
-		'ESPACE_EP_pdf'                 => \&ESPACE_EP_pdf,
+		'ESPACE_EP_pdf'           => \&ESPACE_EP_pdf,
 		'ESPACE_EP_country_known' => \&ESPACE_EP_country_known,
 
 		#		'ESPACE_EP_parse_doc_id'        => \&ESPACE_EP_parse_doc_id,
@@ -39,23 +39,25 @@ sub ESPACE_EP_country_known {
 }
 
 sub ESPACE_EP_pdf {
-#	my ($self) = @_;
-	my ($self,$response) = @_;
+
+	#	my ($self) = @_;
+	my ( $self, $response ) = @_;
 	my (   $url,       $request, $http_response, $base,
 		$zero_fill, $html,    $p,             $referer,
-		%bookmarks, $first,   $last, 
-#		$response 
+		%bookmarks, $first,   $last,
+
+		#		$response
 	);
-	if (!$self->{'patent'}{'country'}) {
-		$response->{'message'} =
-			"country not specified (or doc_id has unrecognized country)";
+	if ( !$self->{'patent'}{'country'} ) {
+		$response->{'message'}
+			= "country not specified (or doc_id has unrecognized country)";
 		$response->{'is_success'} = undef;
 		return ($response);
-		}
-	if ( !&ESPACE_EP_country_known($self, $self->{'patent'}{'country'} ) )
+	}
+	if ( !&ESPACE_EP_country_known( $self, $self->{'patent'}{'country'} ) )
 	{    #unrecognized country
-		$response->{'message'} =
-			"country '".$self->{'patent'}{'country'}."' unrecognized";
+		$response->{'message'}
+			= "country '" . $self->{'patent'}{'country'} . "' unrecognized";
 		$response->{'is_success'} = undef;
 		return ($response);
 	}
@@ -71,8 +73,7 @@ sub ESPACE_EP_pdf {
 	# first, try it quick and dirty...
 
 	{ #http://v3.espacenet.com/pdfdocnav?DB=EPODOC&IDX=US6123456&F=128&QPN=US6123456
-		$url =
-			  'http://v3.espacenet.com/pdfdocnav?DB=EPODOC&IDX='
+		$url = 'http://v3.espacenet.com/pdfdocnav?DB=EPODOC&IDX='
 			. $short_id
 			. '&F=128&QPN='
 			. $short_id;
@@ -80,47 +81,25 @@ sub ESPACE_EP_pdf {
 			or carp "trouble with request object of '$url'";
 		$http_response = $self->request($request);
 		unless ( $http_response->is_success ) {
-			carp
-				"Request '$url' failed with status line " . $http_response->status_line. ".  Bummer.\n";
+			carp "Request '$url' failed with status line "
+				. $http_response->status_line
+				. ".  Bummer.\n";
 			return ($response);
 		}
 
-# <a href="#" target="_top" onClick="return changeSel(0)">
-# <img name="L1" src="/images/L-1st-GR.gif" ALT="1" border="0">
-# </a>&nbsp;<a href="#" target="_top" onClick="return changeSel(-1)">
-# <img name="L2" src="/images/L-AR-GR.gif" ALT="previous" border="0">
-# </a>&nbsp;<select name="pageSel" onChange="go(this)">
-# <option value="1" selected>1/8 - Biblio/Abstract</option>
-# <option value="2">2/8 - Drawings</option>
-# <option value="3">3/8</option>
-# <option value="4">4/8 - Description</option>
-# <option value="5">5/8</option>
-# <option value="6">6/8</option>
-# <option value="7">7/8 - Claims</option>
-# <option value="8">8/8</option>
-# </select>&nbsp;<a href="/pdfdocnav?DB=EPODOC&IDX=US6123456&QPN=US6123456&PGN=2" target="_top" onClick="return changeSel(1)">
-
-		#	$referer = $url;
-		$html =
-			$http_response->content
+		$html = $http_response->content
 			;    # got to find them page numbers and information/bookmarks
 
-		#	$base    = $http_response->base;
-
-		#    print " from '$url', note html:\n$html\n";
-
-		while (   $html =~
-			m{ > \s* # option value closing with >, then optional spaces
+		while (   $html
+			=~ m{ > \s* # option value closing with >, then optional spaces
 			(\d+) [/] \d+   #    1/8 for example			
 			\s+ [-] \s+      #   -  (dash)
 			([\w\/]+)       # page type description
 			}gxms
 			)
 		{    # find the labels of pages
-			$bookmarks{$1} =
-				$2;    # store the labels as bookmarks keyed by page number
-
-			#		print "$1 -> $2\n"
+			$bookmarks{$1}
+				= $2;    # store the labels as bookmarks keyed by page number
 		}
 
 		if ( $html =~ m|1/(\d+)| ) {    # find the last page number
@@ -142,12 +121,10 @@ sub ESPACE_EP_pdf {
 # http://v3.espacenet.com/simplepdfdoc?DB=EPODOC&IDX=US6123456&F=128&QPN=US6123456&PGN=1
 		my $currenttime = localtime();
 		my $pdf         = PDF::API2->new;
-		$pdf->preferences(
-                   -outlines => 1,
-                   );
-		
-		my %h           = $pdf->info(
-			'Author'       => "Programatically Produced from Public Information",
+		$pdf->preferences( -outlines => 1, );
+
+		my %h = $pdf->info(
+			'Author' => "Programatically Produced from Public Information",
 			'CreationDate' => $currenttime,
 			'ModDate'      => $currenttime,
 			'Creator'      => "WWW::Patent::Page::ESPACE_EP",
@@ -156,15 +133,15 @@ sub ESPACE_EP_pdf {
 			'Subject'      => "patent",
 			'Keywords'     => "$short_id WWW::Patent::Page"
 		);
+
 		# Initialize the root of the outline tree
 
-	my $outline_root = $pdf->outlines();
-my $font = $pdf->corefont('Helvetica'); # Use Helvetica throughout
+		my $outline_root = $pdf->outlines();
+		my $font = $pdf->corefont('Helvetica');    # Use Helvetica throughout
 
 		my $page_now = $first;
 		for my $page ( $first .. $last ) {
-			$url =
-				  'http://v3.espacenet.com/simplepdfdoc?DB=EPODOC&IDX='
+			$url = 'http://v3.espacenet.com/simplepdfdoc?DB=EPODOC&IDX='
 				. $short_id
 				. '&F=128&QPN='
 				. $short_id . '&PGN='
@@ -173,8 +150,9 @@ my $font = $pdf->corefont('Helvetica'); # Use Helvetica throughout
 				or carp "trouble with request object of '$url'";
 			$http_response = $self->request($request);
 			if ( !$http_response->is_success ) {
-				carp
-					"Request '$url' failed with status line ".$http_response->status_line.".  Bummer.\n";
+				carp "Request '$url' failed with status line "
+					. $http_response->status_line
+					. ".  Bummer.\n";
 				return (undef);
 			}
 
@@ -182,12 +160,12 @@ my $font = $pdf->corefont('Helvetica'); # Use Helvetica throughout
 			my $pages = scalar @{ $inpdf->{pagestack} };
 			my $bookmark;
 			for my $ppage ( 1 .. $pages ) {    # should only have 1
-				                                  # print STDERR "$page.";
+				                               # print STDERR "$page.";
 				$pdf->importpage( $inpdf, $ppage );
-				my $pdfpage = $pdf->openpage(-1);  # returns the last page
-				if (defined($bookmarks{$page}) ){
+				my $pdfpage = $pdf->openpage(-1);    # returns the last page
+				if ( defined( $bookmarks{$page} ) ) {
 					$bookmark = $outline_root->outline();
-					$bookmark->title($bookmarks{$page});
+					$bookmark->title( $bookmarks{$page} );
 					$bookmark->dest($pdfpage);
 				}
 			}
@@ -195,8 +173,7 @@ my $font = $pdf->corefont('Helvetica'); # Use Helvetica throughout
 
 		}
 
-		if ( $response->set_parameter( 'content', $pdf->stringify() ) )
-		{                                         
+		if ( $response->set_parameter( 'content', $pdf->stringify() ) ) {
 			$response->{'is_success'} = 'pdf successfully built';
 			return $response;
 		}
@@ -206,24 +183,24 @@ my $font = $pdf->corefont('Helvetica'); # Use Helvetica throughout
 
 	return (undef);
 
-#    print "patent number of interest is '$number'\n";
+# print "patent number of interest is '$number'\n";
 # Request: http://v3.espacenet.com/results?sf=n&FIRST=1&F=0&CY=ep&LG=en&DB=EPODOC&PN=US6123456&Submit=SEARCH&=&=&=&=&=
 # Referer: http://ep.espacenet.com/search97cgi/s97_cgi.exe?Action=FormGen&Template=ep/en/number.hts
 # link of interest for bookmarks/outline is http://v3.espacenet.com/pdfdocnav?DB=EPODOC&IDX=US6123456&F=128&QPN=US6123456
 # http://v3.espacenet.com/simplepdfdoc?DB=EPODOC&IDX=US6123456&F=128&QPN=US6123456&PGN=1 is the heart
 # simplepdfdoc preferred over pdfdoc due to lack of broken things like absense of ID for doc and broken encryption
-	$referer =
-		"http://ep.espacenet.com/search97cgi/s97_cgi.exe?Action=FormGen&Template=ep/en/number.hts";
-	$url =
-		'http://v3.espacenet.com/results?sf=n&FIRST=1&F=0&CY=ep&LG=en&DB=EPODOC&PN='
+	$referer
+		= "http://ep.espacenet.com/search97cgi/s97_cgi.exe?Action=FormGen&Template=ep/en/number.hts";
+	$url
+		= 'http://v3.espacenet.com/results?sf=n&FIRST=1&F=0&CY=ep&LG=en&DB=EPODOC&PN='
 		. "$self->{'patent'}{'country'}$number"
 		. '&Submit=SEARCH&=&=&=&=&=';
 	$request = HTTP::Request->new( 'GET' => $url );
 	$request->referer($referer);
 	$http_response = $self->request($request);
 	unless ( $http_response->is_success ) {
-		$response->{'message'} =
-			"request of http://ep.espacenet.com/search97cgi/s97_cgi.exe bad: '$http_response->message'";
+		$response->{'message'}
+			= "request of http://ep.espacenet.com/search97cgi/s97_cgi.exe bad: '$http_response->message'";
 		$response->{'is_success'} = undef;
 		return ($response);
 	}
@@ -234,8 +211,8 @@ my $font = $pdf->corefont('Helvetica'); # Use Helvetica throughout
 		$url = $1;
 	}
 	else {
-		$response->{'message'} =
-			"did not find the textdoc link in the javascript: '$html'";
+		$response->{'message'}
+			= "did not find the textdoc link in the javascript: '$html'";
 		$response->{'is_success'} = undef;
 		return ($response);
 	}
@@ -245,8 +222,8 @@ my $font = $pdf->corefont('Helvetica'); # Use Helvetica throughout
 	$request = new HTTP::Request( 'GET' => "$url" )
 		or carp "trouble with request object of '$url'";
 	$request->referer($referer);
-	$http_response =
-		$self->request($request);    # go to the page of many choices of views
+	$http_response
+		= $self->request($request);  # go to the page of many choices of views
 
 # send in the first returned hit (absoluted):
 # Request for URL:  http://v3.espacenet.com/textdoc?DB=EPODOC&IDX=US6123456&F=0
@@ -255,8 +232,9 @@ my $font = $pdf->corefont('Helvetica'); # Use Helvetica throughout
 # <A class="bluedark" href="origdoc?DB=EPODOC&IDX=US6123456&F=0&QPN=US6123456" >Original document</A>
 # in h331.html
 	unless ( $http_response->is_success ) {
-		carp
-			"Request '$url' failed with status line " .$http_response->status_line. ".  " .$http_response->status_line. ".\n";
+		carp "Request '$url' failed with status line "
+			. $http_response->status_line . ".  "
+			. $http_response->status_line . ".\n";
 		return (0);
 	}
 	$referer = $url;                      # use later on next request
@@ -276,8 +254,7 @@ my $font = $pdf->corefont('Helvetica'); # Use Helvetica throughout
 	$request = new HTTP::Request( 'GET' => "$url" )
 		or carp "trouble with request object of '$url'";
 	$request->referer($referer);
-	$http_response =
-		$self->request($request)
+	$http_response = $self->request($request)
 		; # get the page with the rotten PDF on it, "Original Document" link-to
 
 # Request: http://v3.espacenet.com/origdoc?DB=EPODOC&IDX=US6123456&F=0&QPN=US6123456
@@ -302,16 +279,16 @@ my $font = $pdf->corefont('Helvetica'); # Use Helvetica throughout
 		$url =~ s/pdfdoc\?/pdfdocnav?/;
 	}
 	else { carp "could not find 'pdfdoc' url in '$referer': \n$html"; exit }
-	$url =
-		URI->new_abs( $url, $base )
+	$url = URI->new_abs( $url, $base )
 		; # should be the url of the navigation header above the pdf pages, supplies the number of pages
 
 	# print "going for the url from the maximise link: \n'$url'\n";
 	$request = new HTTP::Request( 'GET' => "$url" )
 		or carp "trouble with request object of '$url'";
 	unless ( $http_response->is_success ) {
-		carp
-			"Request '$url' failed with status line " .$http_response->status_line. ".  Bummer.\n";
+		carp "Request '$url' failed with status line "
+			. $http_response->status_line
+			. ".  Bummer.\n";
 		return (0);
 	}
 	$request->referer($referer);
@@ -343,8 +320,7 @@ my $font = $pdf->corefont('Helvetica'); # Use Helvetica throughout
 
 	$url =~ s/&PGN=\d+//i;    # remove page number portion
 	$url = $url . '&PGN=' . $self->{'patent'}{'page'};
-	$url =
-		URI->new_abs( $url, $base )
+	$url = URI->new_abs( $url, $base )
 		; # should be the url of the navigation header above the pdf pages, supplies the number of pages
 
 	# print "url from navigation that points to pdf: \n'$url'\n";
@@ -456,7 +432,6 @@ This is where the fun stuff happens.  The pdf that are captured have no encrypti
 terms of use
 
 =cut
-
 
 =head2 ESPACE_EP_country_known
 
