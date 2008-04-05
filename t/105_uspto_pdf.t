@@ -1,6 +1,6 @@
 # -*- perl -*-
 
-# t/001_load.t - test documented interface
+# t/015_uspto_pdf.t 
 
 use Test::More tests => 21;    
 

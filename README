@@ -26,7 +26,7 @@ SYNOPSIS
 
       print $WWW::Patent::Page::VERSION,"\n";
 
-      my $patent_browser = WWW::Patent::Page->new(); # new object
+      my $patent_document = WWW::Patent::Page->new(); # new object
 
       my $document1 = $patent_document->get_page('6,123,456');
             # defaults:

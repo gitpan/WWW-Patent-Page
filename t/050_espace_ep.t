@@ -1,6 +1,6 @@
 # -*- perl -*-
 
-# t/001_load.t - test documented interface
+# t/050_espace_ep.t - test documented interface
 
 use Test::More tests => 14;    
 

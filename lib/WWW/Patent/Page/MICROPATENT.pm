@@ -20,7 +20,7 @@ $| = 1;
 #use PDF::API2 2.000;
 use WWW::Patent::Page::Response;
 our ( $VERSION, @ISA, %_country_known );
-$VERSION = "0.05";
+$VERSION = "0.06";
 
 sub _data_hash_from_arrays {
 
@@ -127,7 +127,7 @@ sub MICROPATENT_login {
 			"Login Post Request 'http://www.micropat.com/cgi-bin/login' failed with status line "
 			. $http_response->status_line
 			. ".  Bummer.\n";
-		return ($self);
+		return ($http_response);
 	}
 	my $last_request = $http_response->base;
 
@@ -144,7 +144,7 @@ sub MICROPATENT_login {
 			. "\n\n and content \n\n"
 			. $http_response->content
 			. "\n\n  Bummer.\n";
-		return ($self);
+		return ($http_response);
 	}
 }
 
@@ -216,8 +216,8 @@ sub MICROPATENT_xml {
 	unless ( $http_response->is_success ) {
 		carp "Request '$url' failed with status line "
 			. $http_response->status_line
-			. ".  Bummer.\n";
-		print $http_response->content;
+			. ".  Bummer.\n". Data::Dumper->Dump([$http_response], ['$http_response' ]) ;
+#		print $http_response->content;
 		return ($http_response);
 	}
 
@@ -234,7 +234,7 @@ sub MICROPATENT_xml {
 		$self->{'message'}
 			= "no match found e.g. match-1-0 value 12345678-0 , do not know how to continue \n$html\n no match found e.g. match-1-0 value 12345678-0 , do not know how to continue";
 		$self->{'is_success'} = 0;
-		return ($self);
+		return ($http_response);
 	}
 
 	if (   $html =~ m{ name \s* = \s* "screenseq" \s* # 
@@ -248,7 +248,7 @@ sub MICROPATENT_xml {
 		$self->{'message'}
 			= "no screenseq found, do not know how to continue \n$html\nno screenseq found, do not know how to continue";
 		$self->{'is_success'} = 0;
-		return ($self);
+		return ($http_response);
 	}
 
 	$request = POST "http://www.micropat.com/perl/sunduk/order-submit.pl",
@@ -284,7 +284,7 @@ sub MICROPATENT_xml {
 			$self->{'message'}
 				= "form  " . $forms[0]->dump . " is problematic.\n";
 			$self->{'is_success'} = 0;
-			return ($self);
+			return ($http_response);
 		}
 	}
 
@@ -300,7 +300,7 @@ sub MICROPATENT_xml {
 		$self->{'message'}
 			= "no url to xml found, do not know how to continue \n$html\nno screenseq found, do not know how to continue";
 		$self->{'is_success'} = 0;
-		return ($self);
+		return ($http_response);
 	}
 	$request       = GET "$url";
 	$http_response = $self->request($request);
@@ -318,6 +318,7 @@ sub MICROPATENT_pdf {
 	my (   $url,       $request, $http_response, $base,
 		$zero_fill, $html,    $p,             $referer,
 		%bookmarks, $first,   $last,          $screenseq,
+		$del_CAPS ,
 		$match
 	);
 
@@ -371,11 +372,13 @@ sub MICROPATENT_pdf {
 		carp "Request '$url' failed with status line "
 			. $http_response->status_line
 			. ".  Bummer.\n";
-		print $http_response->content;
+#		print $http_response->content;
 		return ($http_response);
 	}
 
 	$html = $http_response->content;
+#$self->{'patent'}{2} = $http_response->content ; 
+	
 
 	if (   $html =~ m{  value \s* = \s* "	(\d\d\d\d\d\d\d+\-0) "   #   			
 		}xms
@@ -387,7 +390,7 @@ sub MICROPATENT_pdf {
 		$self->{'message'}
 			= "no match found e.g. match-1-0 value 12345678-0 , do not know how to continue \n$html\n no match found e.g. match-1-0 value 12345678-0 , do not know how to continue";
 		$self->{'is_success'} = 0;
-		return ($self);
+		return ($http_response);
 	}
 
 	if (   $html =~ m{ name \s* = \s* "screenseq" \s* # 
@@ -401,7 +404,19 @@ sub MICROPATENT_pdf {
 		$self->{'message'}
 			= "no screenseq found, do not know how to continue \n$html\nno screenseq found, do not know how to continue";
 		$self->{'is_success'} = 0;
-		return ($self);
+		return ($http_response);
+	}
+
+	if (   $html =~ m{ name \s* = \s* "del_CAPS_(\w+)" }xms
+		)
+	{
+		$del_CAPS = $1;
+	}
+	else {
+		$self->{'message'}
+			= "no del_CAPS found, do not know how to continue \n$html\nno screenseq found, do not know how to continue";
+		$self->{'is_success'} = 0;
+		return ($http_response);
 	}
 
 	# print "\n4\n";
@@ -411,11 +426,11 @@ sub MICROPATENT_pdf {
 		'userref'           => "id",
 		'bundle_format'     => "normalized",
 		'screenseq'         => "$screenseq",
-		'del_CAPS_standard' => "DOWNLOADCONCATPDF",
+		'del_CAPS_'.$del_CAPS => "DOWNLOADCONCATPDF",  #either special or standard 
 		'match-1-0'         => "$match",
 		];
 	$http_response = $self->request($request);
-
+#	$self->{'patent'}{3} = $http_response->content ; 
 	unless ( $http_response->is_success ) {
 		carp
 			"Request 'POST http://www.micropat.com/perl/sunduk/order-submit.pl' failed with status line "
@@ -437,6 +452,7 @@ sub MICROPATENT_pdf {
 		}
 
 		$http_response = $self->request( $forms[0]->click );
+
 		unless ( $http_response->is_success ) {
 			confess "Form " . $forms[0]->dump . " is problematic.\n";
 			$self->{'message'}
@@ -460,7 +476,7 @@ sub MICROPATENT_pdf {
 	}
 	else {
 		$self->{'message'}
-			= "no url to PDF found, do not know how to continue \n$html\nno screenseq found, do not know how to continue";
+			= "no url to PDF found, do not know how to continue \n$html\n";
 		$self->{'is_success'} = 0;
 		return ($self);
 	}
@@ -999,6 +1015,17 @@ You get what you pay for.
 =head2 MICROPATENT_country_known
 
 hash with keys of two letter acronyms, values of the dates covered
+
+=cut
+
+=head1 LICENSE AND COPYRIGHT
+
+Copyright (c) 2008, Wanda B. Anon wanda_b_anon@yahoo.com . 
+All rights reserved.
+
+This program is free software; you can redistribute
+it and/or modify it under the Artistic License version 2.0 
+or above ( http://www.perlfoundation.org/artistic_license_2_0 ) .
 
 =cut
 

@@ -439,3 +439,15 @@ hash with keys of two letter acronyms, values of the dates covered
 
 =cut
 
+=head1 LICENSE AND COPYRIGHT
+
+Copyright (c) 2008, Wanda B. Anon wanda_b_anon@yahoo.com . 
+All rights reserved.
+
+This program is free software; you can redistribute
+it and/or modify it under the Artistic License version 2.0 
+or above ( http://www.perlfoundation.org/artistic_license_2_0 ) .
+
+=cut
+
+
