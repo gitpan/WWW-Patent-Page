@@ -12,7 +12,7 @@ use subs qw( new country_known get_page _load_modules _agent _load_country_known
 my (%METHODS, %_country_known);
 my (%MODULES, $default_country, $default_office, @modules_to_load);
 
-use version; our $VERSION = qv('0.105.1');    # March 28, 2008
+use version; our $VERSION = qv('0.105.3');    # March 28, 2008
 use base qw( LWP::UserAgent );
 %_country_known = _load_country_known();
 
