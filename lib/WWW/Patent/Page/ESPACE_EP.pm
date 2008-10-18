@@ -16,7 +16,7 @@ use WWW::Patent::Page::Response;
 
 our ( $VERSION, @ISA, %_country_known );
 
-$VERSION = "0.21";
+$VERSION = "0.22";
 
 sub methods {
 	return (
@@ -80,12 +80,6 @@ sub ESPACE_EP_pdf {
 		$request = new HTTP::Request( 'GET' => "$url" )
 			or carp "trouble with request object of '$url'";
 		$http_response = $self->request($request);
-		unless ( $http_response->is_success ) {
-			carp "Request '$url' failed with status line "
-				. $http_response->status_line
-				. ".  Bummer.\n";
-			return ($response);
-		}
 
 		$html = $http_response->content
 			;    # got to find them page numbers and information/bookmarks
@@ -149,12 +143,6 @@ sub ESPACE_EP_pdf {
 			$request = new HTTP::Request( 'GET' => "$url" )
 				or carp "trouble with request object of '$url'";
 			$http_response = $self->request($request);
-			if ( !$http_response->is_success ) {
-				carp "Request '$url' failed with status line "
-					. $http_response->status_line
-					. ".  Bummer.\n";
-				return (undef);
-			}
 
 			my $inpdf = PDF::API2->openScalar( $http_response->content() );
 			my $pages = scalar @{ $inpdf->{pagestack} };
@@ -198,12 +186,6 @@ sub ESPACE_EP_pdf {
 	$request = HTTP::Request->new( 'GET' => $url );
 	$request->referer($referer);
 	$http_response = $self->request($request);
-	unless ( $http_response->is_success ) {
-		$response->{'message'}
-			= "request of http://ep.espacenet.com/search97cgi/s97_cgi.exe bad: '$http_response->message'";
-		$response->{'is_success'} = undef;
-		return ($response);
-	}
 	$referer = $url;
 	$base    = $http_response->base;
 	$html    = $http_response->content;
@@ -231,12 +213,6 @@ sub ESPACE_EP_pdf {
 # Find the "origdoc" link
 # <A class="bluedark" href="origdoc?DB=EPODOC&IDX=US6123456&F=0&QPN=US6123456" >Original document</A>
 # in h331.html
-	unless ( $http_response->is_success ) {
-		carp "Request '$url' failed with status line "
-			. $http_response->status_line . ".  "
-			. $http_response->status_line . ".\n";
-		return (0);
-	}
 	$referer = $url;                      # use later on next request
 	$html    = $http_response->content;
 	$base    = $http_response->base;
@@ -263,12 +239,6 @@ sub ESPACE_EP_pdf {
 # <a href="#" onClick="openMax(); return false">Maximise</a>
 # (hidden... you bad boys!) function openMax() {  var link ="pdfdoc?DB=EPODOC&IDX=US6123456&F=128&QPN=US6123456".replace('pdfdoc','pdfdocnav');
 # Request: http://v3.espacenet.com/pdfdocnav?DB=EPODOC&IDX=US6123456&F=128&QPN=US6123456
-	unless ( $http_response->is_success ) {
-		carp "this request '$url' failed with status line '"
-			. $http_response->status_line
-			. "'.  Bummer.\n";
-		return (0);
-	}
 	$referer = $url;
 	$html    = $http_response->content;
 	$base    = $http_response->base;      # looking for that Maximize link...
@@ -285,12 +255,6 @@ sub ESPACE_EP_pdf {
 	# print "going for the url from the maximise link: \n'$url'\n";
 	$request = new HTTP::Request( 'GET' => "$url" )
 		or carp "trouble with request object of '$url'";
-	unless ( $http_response->is_success ) {
-		carp "Request '$url' failed with status line "
-			. $http_response->status_line
-			. ".  Bummer.\n";
-		return (0);
-	}
 	$request->referer($referer);
 	$http_response = $self->request($request);   # go to the navigation header
 
@@ -328,12 +292,6 @@ sub ESPACE_EP_pdf {
 		or carp "trouble with request object of '$url'";
 	$request->referer($referer);
 	$http_response = $self->request($request);   # go to the navigation header
-	unless ( $http_response->is_success ) {
-		carp "Request '$url' failed with status line '"
-			. $http_response->status_line
-			. "'.  Bummer.\n";
-		exit;
-	}
 
 	# Eureka...
 	$self->{'patent'}->{'as_string'} = $http_response->content;

@@ -2,17 +2,28 @@ package WWW::Patent::Page;    #modeled vaguely on LWP::UserAgent
 use strict;
 use warnings;
 use diagnostics;
-use Carp;
+use Carp qw(carp cluck confess);
 use English qw( -no_match_vars );
+
+#use HTML::Display;    ## comment out after completion; used for testing.  see sub request 
+#my $browser = HTML::Display->new(class => 'HTML::Display::Win32::IE',);   #comment out after completion; used for testing.  see sub request 
+
 
 # use criticism 'brutal'; # handled in tests; author only
 # $ prove -l lib --verbose  t/999_critic.t  # example of using prove
 require LWP::UserAgent;
+
+#use HTTP::Cache::Transparent; 
+#HTTP::Cache::Transparent::init( {
+#	BasePath => '/tmp/cache' ,
+#	NoUpdate => 60 * 60 *24 * 7 * 52  # seconds 2 minutes 2 hours 2 days 2 weeks 2 years = 1 year 
+#}); 
+
 use subs qw( new country_known get_page _load_modules _agent _load_country_known );
 my (%METHODS, %_country_known);
 my (%MODULES, $default_country, $default_office, @modules_to_load);
 
-use version; our $VERSION = qv('0.105.3');    # March 28, 2008
+use version; our $VERSION = qv('0.106.0');    # April 22, 2008
 use base qw( LWP::UserAgent );
 %_country_known = _load_country_known();
 
@@ -238,27 +249,27 @@ sub parse_doc_id {
 	if ($self->{'patent'}->{'country'} eq 'JP') {
 
 		#	print "country = jp type = $self->{'patent'}->{'doc_type'}\n";
-		if (uc($self->{'patent'}->{'doc_type'}) eq 'H') {
+		if (uc($self->{'patent'}->{'doc_type'}) eq 'H' or uc($self->{'patent'}->{'doc_type'}) eq 'S' or uc($self->{'patent'}->{'doc_type'}) eq 'T' or uc($self->{'patent'}->{'doc_type'}) eq 'M') {
 			my $year = substr($self->{'patent'}->{'number'}, 0, 2);    # Heisei < 10 must have 0 prefix
 			$self->{'patent'}->{'number'} =~ s{^\d\d}{}xm;
 			$self->{'patent'}->{'doc_type'} .= "$year-";
 		}
-		elsif (uc($self->{'patent'}->{'doc_type'}) eq 'S') {
-			my $year = substr($self->{'patent'}->{'number'}, 0, 2);    # Heisei < 10 must have 0 prefix
-			$self->{'patent'}->{'number'} =~ s{^\d\d}{}xm;
-			$self->{'patent'}->{'doc_type'} .= "$year-";
-		}
-		elsif (uc($self->{'patent'}->{'doc_type'}) eq 'T') {
-			my $year = substr($self->{'patent'}->{'number'}, 0, 2);    # Heisei < 10 must have 0 prefix
-			$self->{'patent'}->{'number'} =~ s{^\d\d}{}xm;
-			$self->{'patent'}->{'doc_type'} = "$year-";
-		}
-		elsif (uc($self->{'patent'}->{'doc_type'}) eq 'M') {
-			my $year = substr($self->{'patent'}->{'number'}, 0, 2);    # Heisei < 10 must have 0 prefix
-			$self->{'patent'}->{'number'} =~ s{^\d\d}{}xm;
-			$self->{'patent'}->{'doc_type'} .= "$year-";
-		}
-		elsif ( (substr($self->{'patent'}->{'number'}, 3, 1) ne '-')
+#		elsif (uc($self->{'patent'}->{'doc_type'}) eq 'S') {
+#			my $year = substr($self->{'patent'}->{'number'}, 0, 2);    # Heisei < 10 must have 0 prefix
+#			$self->{'patent'}->{'number'} =~ s{^\d\d}{}xm;
+#			$self->{'patent'}->{'doc_type'} .= "$year-";
+#		}
+#		elsif (uc($self->{'patent'}->{'doc_type'}) eq 'T') {
+#			my $year = substr($self->{'patent'}->{'number'}, 0, 2);    # Heisei < 10 must have 0 prefix
+#			$self->{'patent'}->{'number'} =~ s{^\d\d}{}xm;
+#			$self->{'patent'}->{'doc_type'} = "$year-";
+#		}
+#		elsif (uc($self->{'patent'}->{'doc_type'}) eq 'M') {
+#			my $year = substr($self->{'patent'}->{'number'}, 0, 2);    # Heisei < 10 must have 0 prefix
+#			$self->{'patent'}->{'number'} =~ s{^\d\d}{}xm;
+#			$self->{'patent'}->{'doc_type'} .= "$year-";
+#		}
+		elsif ( (substr($self->{'patent'}->{'number'}, 3, 1) ne q(-))
 			and (length($self->{'patent'}->{'number'}) > 7)
 			and (substr($self->{'patent'}->{'number'}, 0, 4) > 1992)
 			and substr($self->{'patent'}->{'number'}, 0, 4) <= ((localtime(time))[5] + 1900))
@@ -394,6 +405,23 @@ sub terms {
 	my $function_reference = $METHODS{$terms};
 	return &{$function_reference}($self);
 }
+
+sub request {
+	# intercept the LWP request to allow various things
+	my $self = shift; 	
+	my $count = 0;
+#	my $response=$HTTP::Response->new();
+	my $response = LWP::UserAgent::request($self, @_); 
+	while (($count < 2) && (! $response->is_success) ) { # make $count assignable at start-up, configurable 
+		$count++;
+		if ( $response->code == 500 ) { sleep 5; $response = LWP::UserAgent::request($self, @_); cluck 'server responded with code 500, internal server error, trying again for you in case they got their act together in the last few seconds' } # second chance
+		if ( $response->code == 503 ) { sleep 5; $response = LWP::UserAgent::request($self, @_); cluck 'server responded with code 503, Service Unavailable, trying again for you in case it became available in the last few seconds' } # second chance
+	}
+	if ( ! $response->is_success) {confess 'original url = "'.$_[0]->as_string().'", request that caused this response = "'	. $response->request()->as_string.'", response code = "', $response->code(),'" = "'.$response->message.'", response as string = "'.$response->as_string. q(") ; }
+#	my $browser = HTML::Display->new(class => 'HTML::Display::Win32::IE',); # this will open a new window for every page of html! 
+#    $browser->display(html => $response->content);   # for testing to see the web pages 
+	return $response; 	
+} 
 
 sub login {
 	my $self = shift;    # pass $self, then optionally the office whose terms you need, or use that office set in $self
@@ -1084,6 +1112,14 @@ method to use the modules specific to Offices like USPTO, with methods for each 
 LWP::Agent to grab the appropriate URLs and if necessary build the response content or produce error values
 
 =cut
+
+=head2 request
+
+Method to override the LWP::UserAgent::request that gets a URL.
+This calls LWP::UserAgent::request itself, but around it adds things like a retry (and possibly debugging, like throwing pages to a browser for display). 
+
+=cut
+
 
 =head2 terms
 

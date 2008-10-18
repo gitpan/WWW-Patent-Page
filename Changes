@@ -1,5 +1,10 @@
 Revision history for Perl module WWW::Patent::Page and its submodules
 
+0.106.0 ~ October 2008
+	-added method "request" in Page.pm to override LWP; allow debugging, retrying
+	-set sights on Open Patent Services version 2 xml/soap services.
+	
+
 0.105.1 finished Apr 2008
 	-added module for JPO machine translations to English
 		this website is often not responsive, so watch out.

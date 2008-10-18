@@ -22,14 +22,19 @@ use Archive::Zip qw( :ERROR_CODES :CONSTANTS );
 use HTML::TokeParser;
 use HTTP::Headers; 
 use IO::Scalar;
+use Data::Dumper  ; 
 
 # use HTML::Display;    ## comment out after completion; used for testing.
 $Carp::Verbose = 1;
+my $POST;
+$POST = 'GET'; 
+$POST = 'POST'; 
+
 
 # print "$] $^O $^V $^X @INC \n" ; exit;
 # my $browser = HTML::Display->new(class => 'HTML::Display::Win32::IE',);
 
-our ($VERSION, %_country_known); $VERSION = '0.01';
+our ($VERSION, %_country_known); $VERSION = '0.02';
 
 #$|       = 1;
 
@@ -79,7 +84,7 @@ sub JPO_IPDI_translation {
 			carp 'returned html has no forms; possibly maintenance time at JPO? ';
 			$request = HTTP::Request->new(GET => 'http://www.ipdl.inpit.go.jp/homepg_e.ipdl');
 			$response = $self->request($request);
-			carp $response->content;
+			confess $response->content;
 			$self->{is_success} = q{};
 			$self->{message}    = 'returned html has no forms; possibly maintenance time? ';
 			return $self;
@@ -95,6 +100,7 @@ sub JPO_IPDI_translation {
 		}
 
 		#		exit;
+		$forms[0]->method($POST); 
 		my $next_request = $forms[0]->click;    # request for form submission
 		return $next_request;
 	};
@@ -105,10 +111,6 @@ sub JPO_IPDI_translation {
 	($next_request[2]) = (_output_next_request_re($response[1], $re));
 	my $referer = $next_request[2]->uri;                 # use later
 	$response[2] = $self->request($next_request[2]);
-
-	if (!$response[2]->is_success) {
-		die 'Dang.  No success.', $response[2]->content, "\nDang.  No success.\n";
-	}
 	$html = $response[2]->content;
 	## to click on the number, fill out the form
 	if (   $html                                            # (
@@ -117,7 +119,7 @@ sub JPO_IPDI_translation {
 	{
 		$parameter{'N0000'} = $1;
 	}
-	else {carp 'No N0000 in \$html'}
+	else {carp "No N0000 in \$html:\n$html\n"}
 
 	if ($html =~ m/"N0703" \s+ VALUE=" ([^"]+) "/isxm) {
 		$parameter{'N0703'} = $1;
@@ -174,6 +176,11 @@ sub JPO_IPDI_translation {
 	# now you should have the CALLPAJ routine- click the form 0
 	$next_request[13] = (_output_next_request_form($response[5], 0,));
 	$response[13]     = $self->request($next_request[13]);
+	
+#	print "\$next_request[13] < \$english[0] = ".Dumper($next_request[13])."\n"; 
+#if ($debug) { } 
+#	    $browser->display(html => $http_response->content);
+
 
 	#first branch, now a passing move
 	my $html13 = $response[13]->content(); 
@@ -185,6 +192,7 @@ sub JPO_IPDI_translation {
 		$next_request[13] = _output_next_request_re($response[13], qr/SRC="([^"]+)" \s+ NAME="FTMNAVI"/imx);
 		$response[14]     = $self->request($next_request[13]);                                                #  Detail / Japanese
 		($next_request[6]) = (_output_next_request_form($response[14], 1));                                    # 0 or 1 ?
+#		print "\$next_request[6] > \$english[0] = ".Dumper($next_request[6])."\n"; 
 		$response[6] = $self->request($next_request[6]);
 	}
 	else {
@@ -201,7 +209,7 @@ sub JPO_IPDI_translation {
 	if ($html =~ m/"N0000" \s+ VALUE=" ([^"]+) "/isxm) {
 		$parameter{'N0000'} = $1;
 	}
-	else {carp 'No N0000 in \$html'}
+	else {carp "No N0000 in \$html:\n$html\n".Dumper($response[6]) }
 
 	($next_request[6]) = (_output_next_request_form($response[6], 0, %parameter));    # 0 or 1 ?
 	$response[6] = $self->request($next_request[6]);
@@ -211,12 +219,12 @@ sub JPO_IPDI_translation {
 	if ($html =~ m/K_flg \s* = \s* " ([^"]+) "/isxm) {
 		$K_flg = $1;
 	}
-	else {carp 'No \$K_flg in \$html'}
+	else {carp "No \$K_flg $K_flg in \$html:\n$html\n"}
 	my $mid;
 	if ($html =~ m/MID \s* = \s* (\d+) /isxm) {
 		$mid = $1;
 	}
-	else {carp 'No \$mid in \$html'}
+	else {carp "No \$mid $mid in \$html:\n$html\n"}
 
 	$re = qr/FRAME \s+ NAME="tjitemidx" \s+ SRC="([^"]+)"/imsx;
 	($next_request[7]) = (_output_next_request_re($response[6], $re));
@@ -238,7 +246,7 @@ sub JPO_IPDI_translation {
 	if ($html =~ m/document\.form3\.N0000\.value \s* = \s* (\d+) \s* ;/isxm) {
 		$parameter{'N0000'} = $1;
 	}
-	else {carp 'No N0000 in \$html'}
+	else {carp "No N0000 in \$html:\n$html\n"}
 
 	$parameter{'N0550'} = $K_flg;
 
@@ -404,7 +412,7 @@ sub JPO_IPDI_translation {
 			}
 		}
 		else {
-			die "single drawing number $drawing of $images not found.\nhtml = $html\n";
+			confess "single drawing number $drawing of $images not found.\nhtml = $html\n";
 		}
 	}
 
@@ -425,7 +433,7 @@ sub JPO_IPDI_translation {
 		#		print "got representative image\n";
 	}
 
-	#	else {carp "NO expected table drawing in here: \n" . "\$html (unescape \$ to see full html)" . "\n";}
+	#	else {carp "NO expected table drawing in here: \n" . "\$html :\n$html\n" . "\n";}
 
 #=cover.html'); 1=> claims.html');2=>detailed_description.html'); 3=>drawing_description.html');4=>\drawings.html');
 	$html = q{};
@@ -657,6 +665,7 @@ sub _output_next_request_form {
 			$forms[$whichform]->value($name, $replacement{$name});
 		}
 	}
+	$forms[$whichform]->method($POST); 
 	$next_request = $forms[$whichform]->click;
 
 	#		print $next_request->as_string("\n");
@@ -673,19 +682,8 @@ sub JPO_IPDI_request {
 	#	my %tests = @_;
 
 	my $http_response = $self->request($request);
-
-	if (!$http_response->is_success) {    #failure
-		cluck "Request \n'$request' \nfailed with status line \n" . $http_response->status_line . ".  Bummer.\n";
-		print $http_response->content;
-
-		#		$browser->display( html => $http_response->content );
-		return ($http_response);
-	}
-	else {                                #success
 		$next_request = &{$output_next_request}($http_response);
-
 		#    $browser->display(html => $http_response->content);
-	}
 	return ($http_response, $next_request);
 }
 

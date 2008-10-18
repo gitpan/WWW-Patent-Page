@@ -20,7 +20,7 @@ $| = 1;
 #use PDF::API2 2.000;
 use WWW::Patent::Page::Response;
 our ( $VERSION, @ISA, %_country_known );
-$VERSION = "0.06";
+$VERSION = "0.07";
 
 sub _data_hash_from_arrays {
 
@@ -122,13 +122,6 @@ sub MICROPATENT_login {
 		"password=$password&patservices=PatentWeb%20Services&loginname=$username&"
 	);
 	$http_response = $self->request($url);
-	unless ( $http_response->is_success ) {
-		carp
-			"Login Post Request 'http://www.micropat.com/cgi-bin/login' failed with status line "
-			. $http_response->status_line
-			. ".  Bummer.\n";
-		return ($http_response);
-	}
 	my $last_request = $http_response->base;
 
 	#	print $last_request ;
@@ -212,15 +205,6 @@ sub MICROPATENT_xml {
 		];
 
 	$http_response = $self->request($request);
-
-	unless ( $http_response->is_success ) {
-		carp "Request '$url' failed with status line "
-			. $http_response->status_line
-			. ".  Bummer.\n". Data::Dumper->Dump([$http_response], ['$http_response' ]) ;
-#		print $http_response->content;
-		return ($http_response);
-	}
-
 	$html = $http_response->content;
 
 	# print "\n$html\n";
@@ -260,15 +244,6 @@ sub MICROPATENT_xml {
 		'match-1-0'         => "$match",
 		];
 	$http_response = $self->request($request);
-
-	unless ( $http_response->is_success ) {
-		carp
-			"Request 'POST http://www.micropat.com/perl/sunduk/order-submit.pl' failed with status line "
-			. $http_response->status_line
-			. ".  Bummer.\n";
-		return ($http_response);
-	}
-
 	while ( $http_response->content
 		!~ m { (http://www.micropat.com:80/get-file/\d+/)  }xms )
 	{
@@ -279,13 +254,6 @@ sub MICROPATENT_xml {
 		}
 
 		$http_response = $self->request( $forms[0]->click );
-		unless ( $http_response->is_success ) {
-			confess "Form " . $forms[0]->dump . " is problematic.\n";
-			$self->{'message'}
-				= "form  " . $forms[0]->dump . " is problematic.\n";
-			$self->{'is_success'} = 0;
-			return ($http_response);
-		}
 	}
 
 	#	print $http_response->content;
@@ -304,12 +272,6 @@ sub MICROPATENT_xml {
 	}
 	$request       = GET "$url";
 	$http_response = $self->request($request);
-	unless ( $http_response->is_success ) {
-		carp "Request '$url' failed with status line "
-			. $http_response->status_line
-			. ".  Bummer.\n";
-		return ($http_response);
-	}
 	return ($http_response);
 }
 
@@ -367,15 +329,6 @@ sub MICROPATENT_pdf {
 		];
 
 	$http_response = $self->request($request);
-
-	unless ( $http_response->is_success ) {
-		carp "Request '$url' failed with status line "
-			. $http_response->status_line
-			. ".  Bummer.\n";
-#		print $http_response->content;
-		return ($http_response);
-	}
-
 	$html = $http_response->content;
 #$self->{'patent'}{2} = $http_response->content ; 
 	
@@ -431,14 +384,6 @@ sub MICROPATENT_pdf {
 		];
 	$http_response = $self->request($request);
 #	$self->{'patent'}{3} = $http_response->content ; 
-	unless ( $http_response->is_success ) {
-		carp
-			"Request 'POST http://www.micropat.com/perl/sunduk/order-submit.pl' failed with status line "
-			. $http_response->status_line
-			. ".  Bummer.\n";
-		return ($http_response);
-	}
-
 	while ( $http_response->content
 		=~ m {order-detail\.pl}xms )
 	{
@@ -452,14 +397,6 @@ sub MICROPATENT_pdf {
 		}
 
 		$http_response = $self->request( $forms[0]->click );
-
-		unless ( $http_response->is_success ) {
-			confess "Form " . $forms[0]->dump . " is problematic.\n";
-			$self->{'message'}
-				= "form  " . $forms[0]->dump . " is problematic.\n";
-			$self->{'is_success'} = 0;
-			return ($self);
-		}
 		if ($count >= 5 ) {  # give micropatent time to find it...
 			carp( "html page does not have the expected form after 5 attempts:\n"
 					. $http_response->content() );		
@@ -482,13 +419,6 @@ sub MICROPATENT_pdf {
 	}
 	$request       = GET "$url";
 	$http_response = $self->request($request);
-	unless ( $http_response->is_success ) {
-		carp "Request '$url' failed with status line "
-			. $http_response->status_line
-			. ".  Bummer.\n";
-		return ($http_response);
-	}
-	$http_response->{'is_success'} = 'pdf successfully retrieved';
 	return ($http_response);
 }
 
@@ -545,19 +475,7 @@ sub MICROPATENT_data {
 		'worksheet.x'   => "60",
 		'worksheet.y'   => "9",
 		];
-
-	# print "\n2\n";
 	$http_response = $self->request($request);
-
-	# print "\n3\n";
-	unless ( $http_response->is_success ) {
-		carp "Request '$url' failed with status line "
-			. $http_response->status_line
-			. ".  Bummer.\n";
-
-		# print $http_response->content;
-		return ($http_response);
-	}
 	my @forms
 		= HTML::Form->parse($http_response);    # asks for the worksheet name
 	if ( !$forms[0] ) {
@@ -572,14 +490,6 @@ sub MICROPATENT_data {
 		;                                       #give a worksheet name
 	$http_response = $self->request( $forms[0]->click )
 		;    # returns the main worksheet selection page
-	unless ( $http_response->is_success ) {
-		carp "Form " . $forms[0]->dump . " is problematic.\n";
-		$self->{'message'}
-			= "form  " . $forms[0]->dump . " is problematic.\n";
-		$self->{'is_success'} = 0;
-		return ($self);
-	}
-
 #   	@forms = HTML::Form->parse( $http_response );
 # gave a moved page.... 302 ... the location is in the headers, so hopefully LWP follows it without problems.
 #
@@ -598,14 +508,6 @@ sub MICROPATENT_data {
 	$forms[0]->param( 'action', 'export_ft' );    # check the first patent
 	     #above sets up request worksheets/process.pl
 	$http_response = $self->request( $forms[0]->click );    #
-	unless ( $http_response->is_success ) {
-		carp "Form " . $forms[0]->dump . " is problematic.\n";
-		$self->{'message'}
-			= "form  " . $forms[0]->dump . " is problematic.\n";
-		$self->{'is_success'} = 0;
-		return ($self);
-	}
-
 	# intermediate 302 document moved
 	@forms = HTML::Form->parse($http_response)
 		;    # now we want to set up order-submit-export.pl
@@ -622,14 +524,6 @@ sub MICROPATENT_data {
 	#	$forms[0]->param('submit.y' , 17);
 	$forms[0]->param( 'format', 'EXPORT_FLTXFIELDS_TSV' );
 	$http_response = $self->request( $forms[0]->click );
-	unless ( $http_response->is_success ) {
-		carp "Form " . $forms[0]->dump . " is problematic.\n";
-		$self->{'message'}
-			= "form  " . $forms[0]->dump . " is problematic.\n";
-		$self->{'is_success'} = 0;
-		return ($self);
-	}
-
 	# first we get the refresh form.
 	# then we get the processing page, with form 0 to update it.
 
@@ -673,13 +567,6 @@ FINDURL: while ( my $token = $p->get_tag("a") ) {
 	my $url_object = HTTP::Request->new( GET => $url );
 	$http_response = $self->request($url_object)
 		;    # this should be the tab separated text file
-	unless ( $http_response->is_success ) {
-		carp "URL " . $url . " is problematic.\n";
-		$self->{'message'}    = "URL " . $url . " is problematic.\n";
-		$self->{'is_success'} = 0;
-		return ($http_response);
-	}
-
 	#   	carp "last one!/n".$http_response->content;
 	$http_response->{'is_success'} = 'data successfully retrieved';
 	my ( $title, $datal ) = split( qr/\n/, $http_response->content );
@@ -750,21 +637,7 @@ sub MICROPATENT_html {
 		'textonly.x'    => "60",
 		'textonly.y'    => "9",
 		];
-
-	# print "\n2\n";
 	$http_response = $self->request($request);
-
-	# print "\n3\n";
-	unless ( $http_response->is_success ) {
-		carp "Request '$url' failed with status line "
-			. $http_response->status_line
-			. ".  Bummer.\n";
-
-		# print $http_response->content;
-		return (undef);
-	}
-
-	# print "\n3.4\n";
 	# find new parameters, match and screenseq
 	$html = $http_response->content;
 
@@ -815,20 +688,6 @@ sub MICROPATENT_html {
 #</form>  This will take you to response also, like a reload while waiting for availability
 
 	$http_response = $self->request($request);
-
-	# print "\n5\n";
-
-	unless ( $http_response->is_success ) {
-		carp
-			"Request 'POST http://www.micropat.com/perl/sunduk/order-submit.pl' failed with status line "
-			. $http_response->status_line
-			. ".  Bummer.\n";
-		$self->{'message'}
-			= "no DOWNLOADHTML found, do not know how to continue \n$html\nno screenseq found, do not know how to continue";
-		$self->{'is_success'} = 0;
-		return ($self);
-	}
-
 	while ( $http_response->content
 		!~ m { (http://www.micropat.com:80/get-file/\d+/)  }xms )
 	{
@@ -838,13 +697,6 @@ sub MICROPATENT_html {
 					. $http_response->content() );
 		}
 		$http_response = $self->request( $forms[0]->click );
-		unless ( $http_response->is_success ) {
-			carp "Form " . $forms[0]->dump . " is problematic.\n";
-			$self->{'message'}
-				= "form  " . $forms[0]->dump . " is problematic.\n";
-			$self->{'is_success'} = 0;
-			return ($self);
-		}
 	}
 
 $html = $http_response->content;
@@ -858,22 +710,8 @@ $html = $http_response->content;
 		}
 		$http_response = $self->request( $forms[0]->click );
 		$html = $http_response->content;
-		unless ( $http_response->is_success ) {
-			carp "Form " . $forms[0]->dump . " is problematic.\n";
-			$self->{'message'}
-				= "form  " . $forms[0]->dump . " is problematic.\n";
-			$self->{'is_success'} = 0;
-			return ($self);
-		}
 	}
-
-	#	print $http_response->content;
-
 	$html = $http_response->content;
-
-# print "\n$html\n";
-# <a href="http://www.micropat.com:80/get-file/22132829537294079818300522876599/US4288215(A).html">US4288215(A).html
-
 	if ( $html
 		=~ m{ (http://www.micropat.com:80/get-file/\d+/[^\.]+\.html)  }xms )
 	{
@@ -887,12 +725,6 @@ $html = $http_response->content;
 	}
 	$request       = GET "$url";
 	$http_response = $self->request($request);
-	unless ( $http_response->is_success ) {
-		carp "Request '$url' failed with status line "
-			. $http_response->status_line
-			. ".  Bummer.\n";
-		return ($http_response);
-	}
 	return ($http_response);
 }
 

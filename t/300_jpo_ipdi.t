@@ -1,5 +1,6 @@
 # -*- perl -*-
 
+
 # t/300_JPO_IPDI.t
 
 use Test::More tests => 7;
@@ -18,6 +19,9 @@ isa_ok($patent_document, 'WWW::Patent::Page');
 diag('It can take a long time to retrieve the translations- please be patient.');
 my $name;
 my $zipContents;
+
+# JPH04-296594A will fail due to no translation- but also improve by adding Status information  
+# JP2763205B will fail to get first drawing...
 
 $name = 'JP2006-004050A1';
 $zip  = $patent_document->get_page(
