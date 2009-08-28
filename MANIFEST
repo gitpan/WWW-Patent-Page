@@ -6,7 +6,6 @@ Changes
 lib/WWW/Patent/Page.pm
 lib/WWW/Patent/Page/USPTO.pm
 lib/WWW/Patent/Page/Response.pm
-lib/WWW/Patent/Page/ESPACE_EP.pm
 lib/WWW/Patent/Page/MICROPATENT.pm
 lib/WWW/Patent/Page/JPO_IPDI.pm
 examples/get_patent.pl
@@ -21,7 +20,6 @@ t/015_pod_coverage.t
 t/020_network.t
 t/035_defaults.t
 t/040_parse_doc_id.t
-t/050_espace_ep.t
 t/100_uspto.t
 t/105_uspto_pdf.t
 t/200_micropatent.t

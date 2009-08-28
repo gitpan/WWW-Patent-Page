@@ -1,5 +1,8 @@
 Revision history for Perl module WWW::Patent::Page and its submodules
 
+0.107.0 August 2009
+	-removed all traces of ESPACE_EP due to captcha implementation
+
 0.106.0 ~ October 2008
 	-added method "request" in Page.pm to override LWP; allow debugging, retrying
 	-set sights on Open Patent Services version 2 xml/soap services.

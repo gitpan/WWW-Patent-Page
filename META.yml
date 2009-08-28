@@ -1,11 +1,11 @@
 --- #YAML:1.0
 name:                WWW-Patent-Page
-version:             0.106.0
+version:             0.107.0
 abstract:            get patent documents
 license:             ~
 author:              
     - Wanda B. Anon <Wanda_B_Anon@yahoo.com>
-generated_by:        ExtUtils::MakeMaker version 6.44
+generated_by:        ExtUtils::MakeMaker version 6.42
 distribution_type:   module
 requires:     
     Archive::Zip:                  0

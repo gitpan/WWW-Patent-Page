@@ -23,13 +23,13 @@ use subs qw( new country_known get_page _load_modules _agent _load_country_known
 my (%METHODS, %_country_known);
 my (%MODULES, $default_country, $default_office, @modules_to_load);
 
-use version; our $VERSION = qv('0.106.0');    # April 22, 2008
+use version; our $VERSION = qv('0.107.0');    # August, 2009
 use base qw( LWP::UserAgent );
 %_country_known = _load_country_known();
 
 # user set variables:
 @modules_to_load = (
-	'USPTO', 'ESPACE_EP', 'MICROPATENT', 'JPO_IPDI'
+	'USPTO', 'MICROPATENT', 'JPO_IPDI' , # 'ESPACE_EP', # 'ESPACE_EP' bad  August 2009 due to captcha use 
 
 		# , 'OPEN_PATENT_SERVICES'     # Watch this space!
 );
@@ -37,7 +37,8 @@ use base qw( LWP::UserAgent );
 # if you write your own module; please send to wanda_b_Anon@yahoo.com for distribution
 
 $default_country = 'US';
-$default_office  = 'ESPACE_EP';    # they support many countries/entities
+# $default_office  = 'ESPACE_EP';    # they support many countries/entities
+$default_office  = 'USPTO';    # 'ESPACE_EP' bad  August 2009 due to captcha use 
 
 sub new {
 	my ($class, $doc_id, %passed_parm);
@@ -56,7 +57,7 @@ sub new {
 	my %default_parameter = (
 		'is_success'          => undef,
 		'message'             => undef,
-		'office'              => $default_office,     # ESPACE_EP is provided
+		'office'              => $default_office,     # USPTO is provided
 		'office_username'     => undef,               # e.g. MicroPatent account
 		'office_password'     => undef,               # e.g. MicroPatent password
 		'session_token'       => undef,               # e.g. session number in Micropatent, from username and password
@@ -949,8 +950,8 @@ __END__
 
 WWW::Patent::Page - get patent documents
 from WWW source (e.g. JP->Eng translations in HTML from JPO, complete US applications and grants from 
-(USPTO), pdf documents from the esp@cenet at the European Patent Office (ESPACE_EP), and
-place into a WWW::Patent::Page::Response object)
+(USPTO), and place into a WWW::Patent::Page::Response object)
+(note: ESPACE_EP not provided due to captcha use..)
 
 =head1 VERSION
 
@@ -986,14 +987,12 @@ Typical usage in perl code:
 
   my $document1 = $patent_document->get_page('6,123,456');
   	# defaults:
-  	#       office 	=> 'ESPACE_EP',
 	# 	    country => 'US',
 	#	    format 	=> 'pdf',
 	#		page   	=> undef ,
 	# and usual defaults of LWP::UserAgent (subclassed)
 
   my $document2 = $patent_document->get_page('US6123456',
-  			office 	=> 'ESPACE_EP' ,
 			format 	=> 'pdf',
 			page   	=> 2 ,  #get only the second page
 			);
@@ -1036,7 +1035,6 @@ Examples of use:
 
   $patent_browser = WWW::Patent::Page->new(
   			doc_id	=> 'US6,654,321',
-  			office 	=> 'ESPACE_EP' ,
 			format 	=> 'pdf',
 			page   	=> undef ,  # returns all pages in one pdf
 			agent   => 'Mozilla/5.0 (Windows; U; Windows NT 5.0; en-US; rv:1.4b) Gecko/20030516 Mozilla Firebird/0.6',

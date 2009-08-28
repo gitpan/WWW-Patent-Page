@@ -3,7 +3,7 @@ use strict;
 
 # t/001_load.t - check module loading and create testing directory
 
-use Test::More tests => 35;    # perlobj
+use Test::More tests => 34;    # perlobj
 
 my @show_versions =
 	qw/ Archive::Zip
@@ -54,7 +54,7 @@ is($browser->country_known('US'), 'United States of America', 'US maps to "Unite
 
 is($browser->country_known('YY'), undef, 'YY should not map');
 
-cmp_ok($WWW::Patent::Page::ESPACE_EP::VERSION, '>=', 0.21, "ESPACE_EP loaded, VERSION is 0.21 or above");
+# cmp_ok($WWW::Patent::Page::ESPACE_EP::VERSION, '>=', 0.21, "ESPACE_EP loaded, VERSION is 0.21 or above");
 cmp_ok($WWW::Patent::Page::USPTO::VERSION,     '>=', 0.25, "USPTO loaded, VERSION is 0.25 or above");
 
 my $parsemessage = $browser->parse_doc_id('US6,123,456');
