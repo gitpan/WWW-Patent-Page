@@ -15,10 +15,13 @@ use HTML::HeadParser;
 use HTML::TokeParser;
 use PDF::API2 2.00;
 use File::Temp 0.17;
+#use Data::Dumper;
+
+$| = 1 ; 
 
 use vars qw/ $VERSION @ISA/;
 
-$VERSION = "0.28";
+$VERSION = "0.30";
 
 sub methods {
 	return (
@@ -225,9 +228,9 @@ FINDPAGE: while ( $token = $p->get_tag("a") ) {
 	undef $p;
 
 	$url =~ s/PageNum=(\d+)/PageNum=$self->{'patent'}{'page'}/;
-	$url = "http://$base$url";
+#	$url = "http://$base$url";
 
-	#warn "URL = '$url'\n";
+#	warn "URL = '$url'\n";
 	#	 exit;
 	$request = new HTTP::Request( 'GET' => "$url" )
 		or carp "bad numbered page $self->{'patent'}{'page'} fetch $url";
@@ -242,7 +245,7 @@ FINDPAGE: while ( $token = $p->get_tag("embed") ) {
 	}
 
 	# get tiff image
-	$url = "http://$base$url";
+	# $url = "http://$base$url";
 	$request = new HTTP::Request( 'GET' => "$url" )
 		or carp "Coudn't retrieve the tiff image fetch $url";
 	$response = $self->request($request);
@@ -314,7 +317,7 @@ sub USPTO_pdf {
 	my $response = $self->request($request);
 
 	my $html = $response->content;
-
+#	warn "html = $html\n"; 
 	{    # page numbers
 
 		if ( $html =~ m/NumPages=(\d+)/ ) {
@@ -336,9 +339,8 @@ sub USPTO_pdf {
 FINDPAGE: while ( $token = $p->get_tag("a") ) {
 		$url = $token->[1]{href} || "-";    #very strange or construct ???
 		if ( $url =~ m/$self->{'patent'}{'number'}/ ) { last FINDPAGE; }
-
-		# print "$url\n";
 	}
+
 	undef $p;
 
 	if ( defined( $self->{'patent'}{'page'} ) ) {
@@ -347,24 +349,53 @@ FINDPAGE: while ( $token = $p->get_tag("a") ) {
 
 #	print "\n\$self->{'patent'}->{'page'} = '$self->{'patent'}->{'page'}'  |$url = '$url' \@ 391 \n";
 
-	$url = "http://$base$url";
+	#$url = "http://$base$url";
 	$request = new HTTP::Request( 'GET' => "$url" )
 		or carp "bad numbered page $self->{'patent'}{'page'} fetch $url";
-	$response = $self->request($request);
+	$response = $self->request($request) or carp "bad request" ;
 	$html     = $response->content;
 
+# open( my $fh,">", "1.html"); print $fh $html; close $fh; 
+
+	$p = HTML::TokeParser->new( \$html );
+# warn "base = $base, URL1 = '$url'\n";	
+
+$url = ""; 
+
+FINDIMAGE: while($token = $p->get_tag("a") ) {  
+	$url = $token->[1]->{href} || "-" ; 
+	# warn "\ntoken 1 href = ", $token->[1]->{href} , "\n" ; 
+	if ($url =~ m/View\+first\+page/) {last FINDIMAGE; } 
+}
+# warn "URL2 = '$url'\n";	
+
+
+	$request = new HTTP::Request( 'GET' => "$url" )
+		or carp "bad numbered page $self->{'patent'}{'page'} fetch $url";
+	$response = $self->request($request) or carp "bad request" ;
+	$html     = $response->content;
 	$p = HTML::TokeParser->new( \$html );
 
+#open( my $fh1,">", "2.html"); print $fh1 $html; close $fh1; 
+
+
 FINDTIF: while ( $token = $p->get_tag("embed") ) {
+		# print "\ntoken = ", Dumper($token), "\n" ; 
 		$url = $token->[1]->{src} || "-";
-		if ( $url =~ m/image\/tiff/ ) { last FINDTIF; }
+		if ( $url =~ m/tif$/ ) { last FINDTIF; }
 	}
 
 	# get tiff image
-	$url = "http://$base$url";
+	$url = "http://$base$url"; $url =~ s/\n//; 
+	if ( defined( $self->{'patent'}{'page'} ) ) {
+		$url =~ s/PageNum=(\d+)/PageNum=$self->{'patent'}{'page'}/;
+	}
+
+# warn "URL3 = '$url'\n";	
 	my $tif_url = $url;
 	$request = new HTTP::Request( 'GET' => "$url" )
 		or carp "Coudn't retrieve the tiff image fetch $url";
+
 
 	# prepare to store tif image
 	my $pat_page = 1;
@@ -375,6 +406,7 @@ FINDTIF: while ( $token = $p->get_tag("embed") ) {
 #	print "\n\$self->{'patent'}->{'doc_id'} = '$self->{'patent'}->{'doc_id'}' \@ 413 \n";
 
 	$fn_template = $self->{'patent'}->{'doc_id'} . "_p" . $pat_page . "_XXXX";
+#	warn "TEMPLATE => $fn_template,		DIR      => $tempdir\n" ; 
 	my $temp_tif = new File::Temp(
 		TEMPLATE => $fn_template,
 		DIR      => $tempdir,
@@ -389,6 +421,8 @@ FINDTIF: while ( $token = $p->get_tag("embed") ) {
 		$trys++;
 		if ( $response->is_success and $response->content ) {
 			print $temp_tif $response->content;
+#		open( my $th,">", "2.html"); print $th $response->content; close $th; 
+
 			$done = 1;
 		}
 		else {
@@ -402,7 +436,7 @@ FINDTIF: while ( $token = $p->get_tag("embed") ) {
 
 	# convert to pdf
 	my $gfx = $page->gfx();
-	
+	# print Dumper($temp_tif); 
 	$gfx->image( $pdf->image_tiff($temp_tif), 0, 0, 0.23 );
 
 	# one page only

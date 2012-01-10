@@ -4,7 +4,7 @@ use ExtUtils::MakeMaker;
 
 WriteMakefile(
 	NAME          => 'WWW::Patent::Page',
-	AUTHOR        => 'Wanda B. Anon <Wanda_B_Anon@yahoo.com>',
+	AUTHOR        => 'Wanda B. Anon <Wanda.B.Anon@gmail.com>',
 	VERSION_FROM  => 'lib/WWW/Patent/Page.pm',
 	ABSTRACT_FROM => 'lib/WWW/Patent/Page.pm',
 	PL_FILES      => {},

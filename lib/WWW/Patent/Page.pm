@@ -12,6 +12,7 @@ use English qw( -no_match_vars );
 # use criticism 'brutal'; # handled in tests; author only
 # $ prove -l lib --verbose  t/999_critic.t  # example of using prove
 require LWP::UserAgent;
+use WWW::Patent::Page::Response;
 
 #use HTTP::Cache::Transparent; 
 #HTTP::Cache::Transparent::init( {
@@ -23,15 +24,17 @@ use subs qw( new country_known get_page _load_modules _agent _load_country_known
 my (%METHODS, %_country_known);
 my (%MODULES, $default_country, $default_office, @modules_to_load);
 
-use version; our $VERSION = qv('0.107.0');    # August, 2009
+use version; our $VERSION = qv('0.109.0');    # January, 2012
 use base qw( LWP::UserAgent );
 %_country_known = _load_country_known();
 
 # user set variables:
 @modules_to_load = (
-	'USPTO', 'MICROPATENT', 'JPO_IPDI' , # 'ESPACE_EP', # 'ESPACE_EP' bad  August 2009 due to captcha use 
-
-		# , 'OPEN_PATENT_SERVICES'     # Watch this space!
+	'USPTO', 
+	#'MICROPATENT', 
+	#'JPO_IPDI' , 
+	# 'ESPACE_EP', # 'ESPACE_EP' bad  August 2009 due to captcha use 
+	# , 'OPEN_PATENT_SERVICES'     # Watch this space!
 );
 
 # if you write your own module; please send to wanda_b_Anon@yahoo.com for distribution
@@ -949,7 +952,9 @@ __END__
 =head1 NAME
 
 WWW::Patent::Page - get patent documents
-from WWW source (e.g. JP->Eng translations in HTML from JPO, complete US applications and grants from 
+from WWW source (e.g. 
+( not available: JP->Eng translations in HTML from JPO,) 
+complete US applications and grants from 
 (USPTO), and place into a WWW::Patent::Page::Response object)
 (note: ESPACE_EP not provided due to captcha use..)
 
@@ -960,6 +965,8 @@ This document describes WWW::Patent::Page version 0.100.0 of February, 2007.
 =head1 SYNOPSIS
 
 Please see the test suite for working examples in t/ .  The following is not guaranteed to be working or up-to-date.
+
+THE ONLY OFFICE CURRENTLY WORKING IS THE USPTO.
 
   $ perl -I. -MWWW::Patent::Page -e 'print $WWW::Patent::Page::VERSION,"\n"'
   0.02
@@ -1175,11 +1182,11 @@ For United States Patents (US) via the USPTO (USPTO), the 'kind' is ignored in m
 =head1 AUTHOR
 
 	Wanda B. Anon
-	Wanda_B_Anon@yahoo.com
+	Wanda.B.Anon@gmail.com
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright (c) 2008, Wanda B. Anon wanda_b_anon@yahoo.com . 
+Copyright (c) 2008, Wanda B. Anon wanda.b.anon@GMAIL.com . 
 All rights reserved.
 
 This program is free software; you can redistribute

@@ -22,8 +22,6 @@ t/035_defaults.t
 t/040_parse_doc_id.t
 t/100_uspto.t
 t/105_uspto_pdf.t
-t/200_micropatent.t
-t/300_jpo_ipdi.t
 Build.PL
 Makefile.PL
 META.yml
